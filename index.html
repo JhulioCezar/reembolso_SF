@@ -4,16 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Solicitação de Reembolso - Sem Fronteiras</title>
-  <link rel="manifest" href="manifest.json" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; background-color: #f7f9fb; margin: 0; padding: 0; }
     .container {
-        width: 95%;
-        max-width: 800px;
+        width: 800px;
         background-color: #fff;
-        margin: 20px auto;
+        margin: 40px auto;
         padding: 30px 50px;
         border-radius: 8px;
         box-shadow: 0 0 10px rgba(0,0,0,0.1);
@@ -31,7 +29,7 @@
     .remove-row { color: red; cursor: pointer; font-weight: bold; user-select: none; }
     .total { text-align: right; font-weight: bold; font-size: 1.1em; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
     .comprovante-container { display: flex; align-items: center; margin-top: 30px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; flex-wrap: wrap; }
-    .comprovante-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .comprovante-actions { display: flex; align-items: center; }
     .comprovante-actions strong { font-size: 1em; margin-right: 15px; }
     .anexo-btn { background-color:#0072bb; color:white; border: none; padding: 8px 12px; font-size: 0.9em; border-radius:4px; cursor:pointer; margin: 0 5px; white-space: nowrap; }
     #lista-comprovantes { display: flex; flex-wrap: wrap; gap: 8px; margin-left: 15px; align-items: center; }
@@ -40,34 +38,16 @@
     .assinaturas-container { display: flex; justify-content: space-around; align-items: flex-start; margin-top: 40px; gap: 30px; }
     .assinatura-bloco { flex: 1; text-align: center; }
     .assinatura { margin-top: 0; text-align: center; }
-    #signature-pad { border: 2px solid #ccc; border-radius: 6px; width: 100%; max-width: 300px; height: 120px; margin: 0 auto; background-color: #fafafa; cursor: crosshair; touch-action: none; }
+    #signature-pad { border: 2px solid #ccc; border-radius: 6px; width: 100%; max-width: 300px; height: 120px; margin: 0 auto; background-color: #fafafa; cursor: crosshair; }
     .assinatura-btns button { background-color: #0072bb; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer; }
     .assinatura-line { border-top: 1px solid #000; width: 100%; max-width: 300px; margin: 135px auto 0 auto; }
-    #supervisorNome { display: block; width: 100%; max-width: 300px; margin: 8px auto 0 auto; text-align: center; }
     .btn-print { background-color: #5cb85c; color: white; }
     .btn-secondary { background-color: #0072bb; color: white; margin-right: 10px; }
     .btn-danger { background-color: #d9534f; color: white; }
     .btn-print, .btn-secondary, .btn-danger { border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 20px; }
-    .pix-group { display: flex; gap: 15px; flex-wrap: wrap; }
-    #print-only-content { display: none; }
-    
-    /* ADICIONADO: Estilos para o modal de escolha */
-    .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(0,0,0,0.5); z-index: 100; display: none;
-    }
-    .modal {
-        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        background-color: white; padding: 25px; border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 101; display: none;
-        width: 90%; max-width: 350px; text-align: center;
-    }
-    .modal p { margin-top: 0; font-weight: bold; font-size: 1.1em; }
-    .modal button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ccc; background-color: #f0f0f0; cursor: pointer; font-size: 1em; }
-    .modal button.btn-danger { background-color: #d9534f; color: white; border: none; }
-    
-    /* ESTILOS PARA GERAÇÃO DE PDF (html2canvas) */
-    /* O .pdf-generation-mode será aplicado via JS antes de gerar o PDF */
+    .pix-group { display: flex; gap: 15px; }
+    #camera-container, #print-only-content { display: none; }
+
     .pdf-generation-mode .add-row,
     .pdf-generation-mode .remove-row,
     .pdf-generation-mode .comprovante-actions,
@@ -79,6 +59,7 @@
     .pdf-generation-mode .remove-arquivo {
         display: none !important;
     }
+
     .pdf-generation-mode #tabelaDespesas input,
     .pdf-generation-mode #supervisorNome {
         border: none !important;
@@ -87,15 +68,15 @@
         -webkit-appearance: none; /* Remove setas no Chrome/Safari */
         margin: 0;
     }
+    
     .pdf-generation-mode input[type=number] {
         -moz-appearance: textfield; /* Remove setas no Firefox */
     }
-    
     @media print {
         body { background: #fff; }
         .container { box-shadow: none; margin: 0; width: auto; border-radius: 0; }
         .add-row, .remove-row, .anexo-btn, .assinatura-btns, .btn-print, .btn-secondary, .btn-danger,
-        .comprovante-container { display: none !important; }
+        .comprovante-container, #camera-container { display: none !important; }
         input, select, textarea { border: none !important; background-color: transparent !important; box-shadow: none !important; -webkit-appearance: none; -moz-appearance: none; appearance: none; }
         #print-only-content { display: block !important; }
         #tabelaDespesas input, #tabelaDespesas .remove-row { display: none !important; }
@@ -106,42 +87,6 @@
         .print-page { page-break-before: always; text-align: center; padding-top: 40px; }
         .print-page img { max-width: 90%; max-height: 80vh; border: 1px solid #ccc; }
     }
-    
-    @media (max-width: 768px) {
-        .container {
-            width: 100%;
-            margin: 0;
-            padding: 15px;
-            border-radius: 0;
-            box-shadow: none;
-        }
-        .pix-group, .assinaturas-container {
-            flex-direction: column;
-            gap: 20px;
-        }
-        .assinatura-bloco {
-            width: 100%;
-            max-width: 350px;
-            margin: 0 auto;
-        }
-        .assinatura-line {
-            margin-top: 40px;
-        }
-        .header img {
-            max-height: 60px;
-        }
-        .titulo {
-            font-size: 18px;
-        }
-        .comprovante-container {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 15px;
-        }
-        #lista-comprovantes {
-            margin-left: 0;
-        }
-    }
   </style>
 </head>
 <body>
@@ -149,7 +94,7 @@
     <div class="header"> <img src="https://i.imgur.com/dvzRyus.png" alt="Sem Fronteiras Logo"> </div>
     <div class="titulo">Solicitação de Reembolso</div>
     <label for="nomeSolicitante">Nome do solicitante:</label>
-    <input type="text" id="nomeSolicitante" placeholder="Digite o nome completo" autocapitalize="words">
+    <input type="text" id="nomeSolicitante" placeholder="Digite o nome completo">
     <p>Venho por meio deste solicitar o reembolso das despesas informadas abaixo:</p>
     <table id="tabelaDespesas">
       <thead>
@@ -173,25 +118,32 @@
     <div class="comprovante-container">
       <div class="comprovante-actions">
           <strong>Comprovantes:</strong>
-          <button class="anexo-btn" onclick="inserirComprovante()">Inserir Comprovante(s)</button>
+          <button class="anexo-btn" onclick="adicionarComprovante('arquivo')">+ Adicionar Arquivo</button>
+          <button class="anexo-btn" onclick="adicionarComprovante('camera')">📷 Tirar Foto</button>
       </div>
       <div id="lista-comprovantes"></div>
+    </div>
+
+    <div id="camera-container" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border: 2px solid #333; box-shadow: 0 0 15px rgba(0,0,0,0.5); z-index: 1000; text-align: center;">
+        <video id="camera" width="300" height="200" autoplay></video>
+        <button id="capturar-btn" class="anexo-btn" style="margin-top: 10px;">Capturar e Anexar</button>
+        <button onclick="fecharCamera()" class="anexo-btn" style="background-color: #d9534f;">Cancelar</button>
     </div>
 
     <div class="assinaturas-container">
         <div class="assinatura-bloco">
             <div class="assinatura">
-                <p><strong>Assinatura Digital do Solicitante:</strong></p>
-                <canvas id="signature-pad"></canvas>
-                <div class="assinatura-btns">
-                  <button type="button" onclick="limparAssinatura()">Limpar</button>
-                </div>
-            </div>
+              <p><strong>Assinatura Digital do Solicitante:</strong></p>
+              <canvas id="signature-pad"></canvas>
+              <div class="assinatura-btns">
+                <button type="button" onclick="limparAssinatura()">Limpar</button>
+              </div>
+        </div>
         </div>
         <div class="assinatura-bloco">
             <div class="assinatura">
-                <p><strong>Assinatura do Supervisor:</strong></p> 
-                <div class="assinatura-line"></div>                 <input type="text" id="supervisorNome" placeholder="Nome do Supervisor por Extenso" autocapitalize="words" />
+              <div class="assinatura-line"></div>
+              <input type="text" id="supervisorNome" placeholder="Nome do Supervisor por Extenso" style="display: block; width: 100%; max-width: 300px; margin: 8px auto 0 auto; text-align: center;" />
             </div>
         </div>
     </div>
@@ -203,14 +155,6 @@
     </div>
 
     <div id="print-only-content"></div>
-  </div>
-
-  <div id="comprovante-modal-overlay" class="modal-overlay" onclick="fecharModalComprovante()"></div>
-  <div id="comprovante-modal" class="modal">
-    <p>Adicionar comprovante</p>
-    <button onclick="escolherOpcaoComprovante('camera')">📷 Abrir Câmera</button>
-    <button onclick="escolherOpcaoComprovante('arquivo')">📁 Procurar Arquivos</button>
-    <button class="btn-danger" onclick="fecharModalComprovante()">Cancelar</button>
   </div>
 
   <script>
@@ -250,236 +194,18 @@
     }
     
     function capitalizarNomeProprio(nome) { if (!nome) return ''; const excecoes = ['e', 'de', 'da', 'do', 'das', 'dos']; return nome.toLowerCase().split(' ').map((palavra, index) => { if (index > 0 && excecoes.includes(palavra)) { return palavra; } return palavra.charAt(0).toUpperCase() + palavra.slice(1); }).join(' '); }
-    
-    function getImageBase64(url) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.crossOrigin = 'Anonymous';
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                resolve(canvas.toDataURL('image/png'));
-            };
-            img.onerror = reject;
-            img.src = url;
-        });
-    }
-
-    async function gerarPDF() {
-        if (!validarFormulario()) { return; }
-        try {
-            const logoUrl = 'https://i.imgur.com/dvzRyus.png';
-            const logoBase64 = await getImageBase64(logoUrl);
-            const nome = document.getElementById("nomeSolicitante").value;
-            const tipoPixSelect = document.getElementById("tipoPix");
-            const tipoPix = tipoPixSelect.options[tipoPixSelect.selectedIndex].text;
-            const chavePix = document.getElementById("chavePixInput").value;
-            const supervisor = document.getElementById("supervisorNome").value;
-            const total = document.getElementById("total").textContent;
-            const assinaturaImg = signatureCanvas.toDataURL('image/png');
-            const despesas = [];
-            document.querySelectorAll('#tabelaDespesas tbody tr').forEach(row => {
-                const dataInput = row.querySelector('input[type="date"]');
-                const descricaoInput = row.querySelector('input[type="text"]');
-                const valorInput = row.querySelector('input[type="number"]');
-                if (dataInput && descricaoInput && valorInput && (dataInput.value || descricaoInput.value || valorInput.value)) {
-                    despesas.push({
-                        data: dataInput.value ? dataInput.value.split('-').reverse().join('/') : '',
-                        descricao: descricaoInput.value,
-                        valor: parseFloat(valorInput.value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                    });
-                }
-            });
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            const margin = 15;
-            let y = 15;
-            const logoWidth = 50;
-            const logoX = (pageWidth - logoWidth) / 2;
-            pdf.addImage(logoBase64, 'PNG', logoX, y, logoWidth, 12);
-            y += 25;
-            pdf.setFontSize(18);
-            pdf.setFont(undefined, 'bold');
-            pdf.text("Solicitação de Reembolso", pageWidth / 2, y, { align: 'center' });
-            y += 15;
-            pdf.setFontSize(11);
-            pdf.setFont(undefined, 'normal');
-            const labelNome = "Nome do solicitante: ";
-            const labelNomeWidth = pdf.getTextWidth(labelNome);
-            pdf.text(labelNome, margin, y);
-            pdf.setFont(undefined, 'bold');
-            pdf.text(nome, margin + labelNomeWidth, y);
-            pdf.setFont(undefined, 'normal');
-            y += 7;
-            const introLines = pdf.splitTextToSize("Venho por meio deste solicitar o reembolso das despesas informadas abaixo:", pageWidth - (margin * 2));
-            pdf.text(introLines, margin, y);
-            y += (introLines.length * 5) + 5;
-            pdf.setFont(undefined, 'bold');
-            pdf.text("Data", margin, y);
-            pdf.text("Descrição da Despesa", margin + 30, y);
-            pdf.text("Valor (R$)", pageWidth - margin, y, { align: 'right' });
-            y += 2;
-            pdf.line(margin, y, pageWidth - margin, y);
-            y += 5;
-            pdf.setFont(undefined, 'bold');
-            despesas.forEach(d => {
-                const descLines = pdf.splitTextToSize(d.descricao, 110);
-                const rowHeight = (descLines.length * 5) + 3;
-                if (y + rowHeight > 270) {
-                    pdf.addPage();
-                    y = 20;
-                }
-                const textY = y + (rowHeight / 2) - 2;
-                pdf.text(d.data, margin, textY);
-                pdf.text(descLines, margin + 30, y);
-                pdf.text(d.valor, pageWidth - margin, textY, { align: 'right' });
-                y += rowHeight;
-            });
-            pdf.setFont(undefined, 'normal');
-            y += 5;
-            pdf.setFont(undefined, 'bold');
-            pdf.text(`Total a Reembolsar: R$ ${total}`, pageWidth - margin, y, { align: 'right' });
-            y += 15;
-            pdf.setFont(undefined, 'bold');
-            pdf.text("Dados para transferência via Pix:", margin, y);
-            y += 7;
-            pdf.setFont(undefined, 'normal');
-            const col1X = margin;
-            const col2X = pageWidth / 2;
-            pdf.text(`Tipo de Chave: ${tipoPix}`, col1X, y);
-            pdf.text(`Chave: ${chavePix}`, col2X, y);
-            let signatureY = 230;
-            if (y > 210) {
-                pdf.addPage();
-                signatureY = 30;
-            }
-            const solicitanteX = margin;
-            const supervisorX = pageWidth / 2 + 5;
-            pdf.addImage(assinaturaImg, 'PNG', solicitanteX, signatureY, 70, 25);
-            pdf.line(solicitanteX, signatureY + 26, solicitanteX + 70, signatureY + 26);
-            pdf.setFont(undefined, 'bold');
-            pdf.text("Assinatura do Solicitante", solicitanteX + 35, signatureY + 31, { align: 'center' });
-            // CORRIGIDO: Desenha a linha do Supervisor diretamente no PDF
-            pdf.line(supervisorX, signatureY + 26, supervisorX + 70, signatureY + 26);
-            pdf.setFont(undefined, 'bold');
-            pdf.text(supervisor, supervisorX + 35, signatureY + 31, { align: 'center', fontStyle: 'bold' });
-            pdf.setFont(undefined, 'normal');
-            pdf.text("Assinatura do Supervisor", supervisorX + 35, signatureY + 36, { align: 'center' });
-            // FIM DA CORREÇÃO
-            comprovantes.forEach((comprovante, index) => {
-                pdf.addPage();
-                const title = `Comprovante ${index + 1}`;
-                const imgProps = pdf.getImageProperties(comprovante.src);
-                const innerMargin = 15;
-                const maxWidth = pdf.internal.pageSize.getWidth() - innerMargin * 2;
-                const maxHeight = pdf.internal.pageSize.getHeight() - innerMargin * 2 - 20;
-                const ratio = Math.min(maxWidth / imgProps.width, maxHeight / imgProps.height);
-                const w = imgProps.width * ratio;
-                const h = imgProps.height * ratio;
-                const x = (pdf.internal.pageSize.getWidth() - w) / 2;
-                const y_img = (pdf.internal.pageSize.getHeight() - h) / 2 + 10;
-                pdf.setFontSize(12);
-                pdf.text(title, pdf.internal.pageSize.getWidth() / 2, innerMargin, { align: 'center' });
-                pdf.addImage(comprovante.src, 'PNG', x, y_img, w, h);
-            });
-            pdf.save(`reembolso_${nome.replace(/\s+/g, '_')}.pdf`);
-        } catch (error) {
-            console.error("Erro ao gerar PDF:", error);
-            alert("Não foi possível gerar o PDF. Verifique sua conexão com a internet e tente novamente.");
-        }
-    }
-
+    async function gerarPDF() { if (!validarFormulario()) { return; } const formElement = document.querySelector(".container"); formElement.classList.add("pdf-generation-mode"); html2canvas(formElement, { scale: 2, useCORS: true }).then(canvas => { const imgData = canvas.toDataURL('image/png'); const { jsPDF } = window.jspdf; const pdf = new jsPDF('p', 'mm', 'a4'); const pdfWidth = pdf.internal.pageSize.getWidth(); const pageHeight = pdf.internal.pageSize.getHeight(); const imgHeight = canvas.height * pdfWidth / canvas.width; pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight); comprovantes.forEach((comprovante, index) => { pdf.addPage(); const title = `Comprovante ${index + 1}`; const imgProps = pdf.getImageProperties(comprovante.src); const margin = 15; const maxWidth = pdfWidth - margin * 2; const maxHeight = pageHeight - margin * 2 - 20; const ratio = Math.min(maxWidth / imgProps.width, maxHeight / imgProps.height); const w = imgProps.width * ratio; const h = imgProps.height * ratio; const x = (pdfWidth - w) / 2; const y = (pageHeight - h) / 2 + 10; pdf.setFontSize(12); pdf.text(title, pdfWidth / 2, margin, { align: 'center' }); pdf.addImage(comprovante.src, 'PNG', x, y, w, h); }); const nome = document.getElementById("nomeSolicitante").value.trim(); pdf.save(`reembolso_${nome.replace(/\s+/g, '_')}.pdf`); formElement.classList.remove("pdf-generation-mode"); }); }
     function prepararEImprimir() { if (!validarFormulario()) { return; } document.querySelectorAll('#tabelaDespesas tbody td').forEach(cell => { const input = cell.querySelector('input'); if (input) { let valor = input.type === 'date' && input.value ? input.value.split('-').reverse().join('/') : input.value; const span = document.createElement('span'); span.className = 'print-value'; span.textContent = valor; cell.appendChild(span); } }); const printContent = document.getElementById('print-only-content'); printContent.innerHTML = ''; comprovantes.forEach((comprovante, index) => { const page = document.createElement('div'); page.className = 'print-page'; const title = document.createElement('h2'); title.textContent = `Comprovante ${index + 1}`; const img = document.createElement('img'); img.src = comprovante.src; page.appendChild(title); page.appendChild(img); printContent.appendChild(page); }); setTimeout(window.print, 100); }
-    
-    // ALTERADO: Funções para controlar o modal de escolha
-    const modal = document.getElementById('comprovante-modal');
-    const overlay = document.getElementById('comprovante-modal-overlay');
-
-    function inserirComprovante() {
-        modal.style.display = 'block';
-        overlay.style.display = 'block';
-    }
-
-    function fecharModalComprovante() {
-        modal.style.display = 'none';
-        overlay.style.display = 'none';
-    }
-
-    function escolherOpcaoComprovante(tipo) {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/jpeg,image/png';
-
-        if (tipo === 'camera') {
-            input.setAttribute('capture', 'environment');
-        } else {
-            input.multiple = true;
-        }
-
-        input.onchange = e => {
-            const files = e.target.files;
-            if (!files.length) return;
-            for (const file of files) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    comprovantes.push({ filename: file.name, src: event.target.result });
-                    renderizarComprovantes();
-                };
-                reader.readAsDataURL(file);
-            }
-        };
-        
-        input.click();
-        fecharModalComprovante();
-    }
-    
+    function adicionarComprovante(tipo) { if (tipo === 'arquivo') { const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/jpeg,image/png'; input.onchange = e => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(event) { comprovantes.push({ filename: file.name, src: event.target.result }); renderizarComprovantes(); }; reader.readAsDataURL(file); }; input.click(); } else if (tipo === 'camera') { abrirCamera(); } }
+    document.getElementById('capturar-btn').onclick = function() { const video = document.getElementById('camera'); const canvas = document.createElement('canvas'); canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height); const filename = `Foto_${new Date().toISOString()}.png`; comprovantes.push({ filename: filename, src: canvas.toDataURL('image/png') }); renderizarComprovantes(); fecharCamera(); };
     function renderizarComprovantes() { const listaArea = document.getElementById('lista-comprovantes'); listaArea.innerHTML = ''; comprovantes.forEach((comprovante, index) => { const item = document.createElement('div'); item.className = 'arquivo-item'; const nomeArquivo = document.createElement('span'); nomeArquivo.textContent = comprovante.filename; const removeBtn = document.createElement('span'); removeBtn.className = 'remove-arquivo'; removeBtn.innerHTML = '&times;'; removeBtn.onclick = function() { removerComprovante(index); }; item.appendChild(nomeArquivo); item.appendChild(removeBtn); listaArea.appendChild(item); }); }
     function removerComprovante(index) { comprovantes.splice(index, 1); renderizarComprovantes(); }
     function limparFormulario() { if (confirm("Tem certeza de que deseja limpar todos os campos do formulário?")) { document.getElementById('nomeSolicitante').value = ''; document.getElementById('supervisorNome').value = ''; document.querySelector('#tabelaDespesas tbody').innerHTML = ''; adicionarLinha(); comprovantes = []; renderizarComprovantes(); document.getElementById('tipoPix').value = 'cpf_cnpj'; configurarInputPix(); limparAssinatura(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
     function adicionarLinha() { const tabelaBody = document.getElementById("tabelaDespesas").getElementsByTagName("tbody")[0]; const novaLinha = document.createElement("tr"); novaLinha.innerHTML = `<td><input type="date" max="${dataMaxima}" /></td><td><input type="text" class="descricao-despesa" placeholder="Descreva a despesa" /></td><td><input type="number" class="valor" step="0.01" min="0" placeholder="0.00" /></td><td><span class="remove-row" title="Remover linha">✖</span></td>`; tabelaBody.appendChild(novaLinha); atualizarEventos(); }
-    function atualizarEventos() { document.querySelectorAll(".valor").forEach(input => { input.oninput = calcularTotal; input.onblur = function() { const valor = parseFloat(this.value); if (!isNaN(valor)) { this.value = valor.toFixed(2); } }; }); document.querySelectorAll(".remove-row").forEach(btn => { btn.onclick = function() { this.closest("tr").remove(); calcularTotal(); }; };); document.querySelectorAll(".descricao-despesa").forEach(input => { input.oninput = function() { this.value = this.value.split(' ').map(word => { return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(); }).join(' '); }; }); calcularTotal(); }
-    
-    function configurarInputPix() {
-        const tipo = document.getElementById("tipoPix").value;
-        const input = document.getElementById("chavePixInput");
-        input.oninput = null; input.value = "";
-        input.setAttribute("type", "text");
-        input.removeAttribute("maxlength");
-        input.removeAttribute("inputmode");
-        switch (tipo) {
-            case 'cpf_cnpj':
-                input.setAttribute("placeholder", "Digite o CPF ou CNPJ");
-                input.setAttribute("inputmode", "numeric");
-                input.setAttribute("maxlength", "18");
-                input.oninput = function() {
-                    let value = this.value.replace(/\D/g, '');
-                    if (value.length > 14) value = value.substring(0, 14);
-                    if (value.length <= 11) {
-                        value = value.replace(/(\d{3})(\d)/, '$1.$2'); value = value.replace(/(\d{3})(\d)/, '$1.$2'); value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-                    } else {
-                        value = value.replace(/^(\d{2})(\d)/, '$1.$2'); value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3'); value = value.replace(/\.(\d{3})(\d)/, '.$1/$2'); value = value.replace(/(\d{4})(\d)/, '$1-$2');
-                    }
-                    this.value = value;
-                };
-                break;
-            case 'celular':
-                input.setAttribute("placeholder", "Ex: (99) 98765-4321");
-                input.setAttribute("type", "tel");
-                break;
-            case 'email':
-                input.setAttribute("placeholder", "Ex: seu.email@dominio.com");
-                input.setAttribute("type", "email");
-                break;
-            case 'aleatoria':
-                input.setAttribute("placeholder", "Digite a chave");
-                break;
-        }
-    }
-    
+    function atualizarEventos() { document.querySelectorAll(".valor").forEach(input => { input.oninput = calcularTotal; input.onblur = function() { const valor = parseFloat(this.value); if (!isNaN(valor)) { this.value = valor.toFixed(2); } }; }); document.querySelectorAll(".remove-row").forEach(btn => { btn.onclick = function() { this.closest("tr").remove(); calcularTotal(); }; }); document.querySelectorAll(".descricao-despesa").forEach(input => { input.oninput = function() { this.value = this.value.split(' ').map(word => { return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(); }).join(' '); }; }); calcularTotal(); }
+    function configurarInputPix() { const tipo = document.getElementById("tipoPix").value; const input = document.getElementById("chavePixInput"); input.oninput = null; input.value = ""; input.setAttribute("type", "text"); input.removeAttribute("maxlength"); switch (tipo) { case 'cpf_cnpj': input.setAttribute("placeholder", "Digite o CPF"); input.setAttribute("maxlength", "14"); input.oninput = function() { let value = this.value.replace(/\D/g, ''); if (value.length > 11) value = value.substring(0, 11); value = value.replace(/(\d{3})(\d)/, '$1.$2'); value = value.replace(/(\d{3})(\d)/, '$1.$2'); value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2'); this.value = value; }; break; case 'celular': input.setAttribute("placeholder", "Ex: (99) 98765-4321"); input.setAttribute("type", "tel"); break; case 'email': input.setAttribute("placeholder", "Ex: seu.email@dominio.com"); input.setAttribute("type", "email"); break; case 'aleatoria': input.setAttribute("placeholder", "Digite a chave"); break; } }
+    function abrirCamera() { document.getElementById("camera-container").style.display = "block"; navigator.mediaDevices.getUserMedia({ video: true }).then(stream => { document.getElementById("camera").srcObject = stream; }).catch(err => { alert("Não foi possível acessar a câmera: " + err); fecharCamera(); }); }
+    function fecharCamera() { const video = document.getElementById("camera"); if (video.srcObject) { video.srcObject.getTracks().forEach(track => track.stop()); } document.getElementById("camera-container").style.display = "none"; }
     function calcularTotal() { let total = 0; document.querySelectorAll(".valor").forEach(input => { const val = parseFloat(input.value); if (!isNaN(val)) total += val; }); document.getElementById("total").textContent = total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
     function setupSignature() { signatureCanvas = document.getElementById("signature-pad"); if (!signatureCanvas) return; signatureCtx = signatureCanvas.getContext("2d"); signatureDrawing = false; signatureCanvas.addEventListener("mousedown", e => { signatureDrawing = true; signatureCtx.beginPath(); signatureCtx.moveTo(e.offsetX, e.offsetY); }); signatureCanvas.addEventListener("mousemove", e => { if (signatureDrawing) { signatureCtx.lineTo(e.offsetX, e.offsetY); signatureCtx.stroke(); } }); signatureCanvas.addEventListener("mouseup", () => signatureDrawing = false); signatureCanvas.addEventListener("mouseleave", () => signatureDrawing = false); signatureCanvas.addEventListener("touchstart", e => { e.preventDefault(); const touch = e.touches[0]; signatureDrawing = true; signatureCtx.beginPath(); signatureCtx.moveTo(touch.clientX - signatureCanvas.getBoundingClientRect().left, touch.clientY - signatureCanvas.getBoundingClientRect().top); }); signatureCanvas.addEventListener("touchmove", e => { e.preventDefault(); if (signatureDrawing) { const touch = e.touches[0]; signatureCtx.lineTo(touch.clientX - signatureCanvas.getBoundingClientRect().left, touch.clientY - signatureCanvas.getBoundingClientRect().top); signatureCtx.stroke(); } }); signatureCanvas.addEventListener("touchend", () => signatureDrawing = false); }
     function limparAssinatura() { if (signatureCtx && signatureCanvas) { signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height); } }
@@ -493,19 +219,7 @@
       const supervisorNomeInput = document.getElementById('supervisorNome');
       nomeSolicitanteInput.addEventListener('input', function() { this.value = capitalizarNomeProprio(this.value); });
       supervisorNomeInput.addEventListener('input', function() { this.value = capitalizarNomeProprio(this.value); });
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(registration => {
-              console.log('ServiceWorker registrado com sucesso:', registration.scope);
-            })
-            .catch(error => {
-              console.log('Falha no registro do ServiceWorker:', error);
-            });
-        });
-      }
     });
   </script>
 </body>
-
 </html>
