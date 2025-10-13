@@ -50,6 +50,21 @@
     .btn-print, .btn-secondary, .btn-danger { border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 20px; }
     .pix-group { display: flex; gap: 15px; flex-wrap: wrap; }
     #print-only-content { display: none; }
+    
+    /* ADICIONADO: Estilos para o modal de escolha */
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(0,0,0,0.5); z-index: 100; display: none;
+    }
+    .modal {
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        background-color: white; padding: 25px; border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 101; display: none;
+        width: 90%; max-width: 350px; text-align: center;
+    }
+    .modal p { margin-top: 0; font-weight: bold; font-size: 1.1em; }
+    .modal button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ccc; background-color: #f0f0f0; cursor: pointer; font-size: 1em; }
+    .modal button.btn-danger { background-color: #d9534f; color: white; border: none; }
 
     @media print {
         body { background: #fff; }
@@ -164,6 +179,14 @@
     </div>
 
     <div id="print-only-content"></div>
+  </div>
+
+  <div id="comprovante-modal-overlay" class="modal-overlay" onclick="fecharModalComprovante()"></div>
+  <div id="comprovante-modal" class="modal">
+    <p>Adicionar comprovante</p>
+    <button onclick="escolherOpcaoComprovante('camera')">📷 Abrir Câmera</button>
+    <button onclick="escolherOpcaoComprovante('arquivo')">📁 Procurar Arquivos</button>
+    <button class="btn-danger" onclick="fecharModalComprovante()">Cancelar</button>
   </div>
 
   <script>
@@ -316,7 +339,7 @@
             pdf.line(solicitanteX, signatureY + 26, solicitanteX + 70, signatureY + 26);
             pdf.setFont(undefined, 'bold');
             pdf.text("Assinatura do Solicitante", solicitanteX + 35, signatureY + 31, { align: 'center' });
-            pdf.line(supervisorX, signatureY + 26, supervisorX + 70, signatureY + 26);
+            pdf.line(supervisorX, signatureY + 26, supervisorX + 70, supervisorX + 26);
             pdf.text(supervisor, supervisorX + 35, signatureY + 31, { align: 'center', fontStyle: 'bold' });
             comprovantes.forEach((comprovante, index) => {
                 pdf.addPage();
@@ -343,11 +366,31 @@
 
     function prepararEImprimir() { if (!validarFormulario()) { return; } document.querySelectorAll('#tabelaDespesas tbody td').forEach(cell => { const input = cell.querySelector('input'); if (input) { let valor = input.type === 'date' && input.value ? input.value.split('-').reverse().join('/') : input.value; const span = document.createElement('span'); span.className = 'print-value'; span.textContent = valor; cell.appendChild(span); } }); const printContent = document.getElementById('print-only-content'); printContent.innerHTML = ''; comprovantes.forEach((comprovante, index) => { const page = document.createElement('div'); page.className = 'print-page'; const title = document.createElement('h2'); title.textContent = `Comprovante ${index + 1}`; const img = document.createElement('img'); img.src = comprovante.src; page.appendChild(title); page.appendChild(img); printContent.appendChild(page); }); setTimeout(window.print, 100); }
     
+    // ALTERADO: Funções para controlar o modal de escolha
+    const modal = document.getElementById('comprovante-modal');
+    const overlay = document.getElementById('comprovante-modal-overlay');
+
     function inserirComprovante() {
+        modal.style.display = 'block';
+        overlay.style.display = 'block';
+    }
+
+    function fecharModalComprovante() {
+        modal.style.display = 'none';
+        overlay.style.display = 'none';
+    }
+
+    function escolherOpcaoComprovante(tipo) {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/jpeg,image/png';
-        input.multiple = true;
+
+        if (tipo === 'camera') {
+            input.setAttribute('capture', 'environment');
+        } else {
+            input.multiple = true;
+        }
+
         input.onchange = e => {
             const files = e.target.files;
             if (!files.length) return;
@@ -360,7 +403,9 @@
                 reader.readAsDataURL(file);
             }
         };
+        
         input.click();
+        fecharModalComprovante();
     }
     
     function renderizarComprovantes() { const listaArea = document.getElementById('lista-comprovantes'); listaArea.innerHTML = ''; comprovantes.forEach((comprovante, index) => { const item = document.createElement('div'); item.className = 'arquivo-item'; const nomeArquivo = document.createElement('span'); nomeArquivo.textContent = comprovante.filename; const removeBtn = document.createElement('span'); removeBtn.className = 'remove-arquivo'; removeBtn.innerHTML = '&times;'; removeBtn.onclick = function() { removerComprovante(index); }; item.appendChild(nomeArquivo); item.appendChild(removeBtn); listaArea.appendChild(item); }); }
@@ -369,43 +414,32 @@
     function adicionarLinha() { const tabelaBody = document.getElementById("tabelaDespesas").getElementsByTagName("tbody")[0]; const novaLinha = document.createElement("tr"); novaLinha.innerHTML = `<td><input type="date" max="${dataMaxima}" /></td><td><input type="text" class="descricao-despesa" placeholder="Descreva a despesa" /></td><td><input type="number" class="valor" step="0.01" min="0" placeholder="0.00" /></td><td><span class="remove-row" title="Remover linha">✖</span></td>`; tabelaBody.appendChild(novaLinha); atualizarEventos(); }
     function atualizarEventos() { document.querySelectorAll(".valor").forEach(input => { input.oninput = calcularTotal; input.onblur = function() { const valor = parseFloat(this.value); if (!isNaN(valor)) { this.value = valor.toFixed(2); } }; }); document.querySelectorAll(".remove-row").forEach(btn => { btn.onclick = function() { this.closest("tr").remove(); calcularTotal(); }; }); document.querySelectorAll(".descricao-despesa").forEach(input => { input.oninput = function() { this.value = this.value.split(' ').map(word => { return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(); }).join(' '); }; }); calcularTotal(); }
     
-    // ALTERADO: Função atualizada para incluir o inputmode="numeric"
     function configurarInputPix() {
         const tipo = document.getElementById("tipoPix").value;
         const input = document.getElementById("chavePixInput");
-        
-        // Reseta os atributos para o padrão
-        input.oninput = null;
-        input.value = "";
+        input.oninput = null; input.value = "";
         input.setAttribute("type", "text");
         input.removeAttribute("maxlength");
         input.removeAttribute("inputmode");
-
         switch (tipo) {
             case 'cpf_cnpj':
                 input.setAttribute("placeholder", "Digite o CPF ou CNPJ");
-                input.setAttribute("inputmode", "numeric"); // Pede o teclado numérico
-                input.setAttribute("maxlength", "18"); // 14.123.123/0001-12
+                input.setAttribute("inputmode", "numeric");
+                input.setAttribute("maxlength", "18");
                 input.oninput = function() {
                     let value = this.value.replace(/\D/g, '');
                     if (value.length > 14) value = value.substring(0, 14);
-                    
-                    if (value.length <= 11) { // CPF
-                        value = value.replace(/(\d{3})(\d)/, '$1.$2');
-                        value = value.replace(/(\d{3})(\d)/, '$1.$2');
-                        value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-                    } else { // CNPJ
-                        value = value.replace(/^(\d{2})(\d)/, '$1.$2');
-                        value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
-                        value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
-                        value = value.replace(/(\d{4})(\d)/, '$1-$2');
+                    if (value.length <= 11) {
+                        value = value.replace(/(\d{3})(\d)/, '$1.$2'); value = value.replace(/(\d{3})(\d)/, '$1.$2'); value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                    } else {
+                        value = value.replace(/^(\d{2})(\d)/, '$1.$2'); value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3'); value = value.replace(/\.(\d{3})(\d)/, '.$1/$2'); value = value.replace(/(\d{4})(\d)/, '$1-$2');
                     }
                     this.value = value;
                 };
                 break;
             case 'celular':
                 input.setAttribute("placeholder", "Ex: (99) 98765-4321");
-                input.setAttribute("type", "tel"); // "tel" já exibe um teclado numérico apropriado
+                input.setAttribute("type", "tel");
                 break;
             case 'email':
                 input.setAttribute("placeholder", "Ex: seu.email@dominio.com");
