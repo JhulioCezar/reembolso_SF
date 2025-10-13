@@ -51,7 +51,6 @@
     .pix-group { display: flex; gap: 15px; flex-wrap: wrap; }
     #print-only-content { display: none; }
     
-    /* ADICIONADO: Estilos para o modal de escolha */
     .modal-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background-color: rgba(0,0,0,0.5); z-index: 100; display: none;
@@ -328,19 +327,27 @@
             const col2X = pageWidth / 2;
             pdf.text(`Tipo de Chave: ${tipoPix}`, col1X, y);
             pdf.text(`Chave: ${chavePix}`, col2X, y);
-            let signatureY = 230;
-            if (y > 210) {
+            
+            // ▼▼▼ BLOCO ALTERADO ▼▼▼
+            let signatureY = y + 25;
+            if (signatureY > 220) {
                 pdf.addPage();
                 signatureY = 30;
             }
-            const solicitanteX = margin;
-            const supervisorX = pageWidth / 2 + 5;
-            pdf.addImage(assinaturaImg, 'PNG', solicitanteX, signatureY, 70, 25);
-            pdf.line(solicitanteX, signatureY + 26, solicitanteX + 70, signatureY + 26);
+            const signatureWidth = 70;
+            const signatureCenterX = (pageWidth - signatureWidth) / 2;
+            
+            pdf.addImage(assinaturaImg, 'PNG', signatureCenterX, signatureY, signatureWidth, 25);
+            pdf.line(signatureCenterX, signatureY + 26, signatureCenterX + signatureWidth, signatureY + 26);
             pdf.setFont(undefined, 'bold');
-            pdf.text("Assinatura do Solicitante", solicitanteX + 35, signatureY + 31, { align: 'center' });
-            pdf.line(supervisorX, signatureY + 26, supervisorX + 70, signatureY + 26);
-            pdf.text(supervisor, supervisorX + 35, signatureY + 31, { align: 'center', fontStyle: 'bold' });
+            pdf.text("Assinatura do Solicitante", pageWidth / 2, signatureY + 31, { align: 'center' });
+            
+            signatureY += 45;
+
+            pdf.line(signatureCenterX, signatureY + 26, signatureCenterX + signatureWidth, signatureY + 26);
+            pdf.text(supervisor || "Assinatura do Supervisor", pageWidth / 2, signatureY + 31, { align: 'center', fontStyle: 'bold' });
+            // ▲▲▲ FIM DO BLOCO ALTERADO ▲▲▲
+
             comprovantes.forEach((comprovante, index) => {
                 pdf.addPage();
                 const title = `Comprovante ${index + 1}`;
@@ -366,7 +373,6 @@
 
     function prepararEImprimir() { if (!validarFormulario()) { return; } document.querySelectorAll('#tabelaDespesas tbody td').forEach(cell => { const input = cell.querySelector('input'); if (input) { let valor = input.type === 'date' && input.value ? input.value.split('-').reverse().join('/') : input.value; const span = document.createElement('span'); span.className = 'print-value'; span.textContent = valor; cell.appendChild(span); } }); const printContent = document.getElementById('print-only-content'); printContent.innerHTML = ''; comprovantes.forEach((comprovante, index) => { const page = document.createElement('div'); page.className = 'print-page'; const title = document.createElement('h2'); title.textContent = `Comprovante ${index + 1}`; const img = document.createElement('img'); img.src = comprovante.src; page.appendChild(title); page.appendChild(img); printContent.appendChild(page); }); setTimeout(window.print, 100); }
     
-    // ALTERADO: Funções para controlar o modal de escolha
     const modal = document.getElementById('comprovante-modal');
     const overlay = document.getElementById('comprovante-modal-overlay');
 
@@ -466,7 +472,7 @@
       supervisorNomeInput.addEventListener('input', function() { this.value = capitalizarNomeProprio(this.value); });
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker.register('./sw.js')
             .then(registration => {
               console.log('ServiceWorker registrado com sucesso:', registration.scope);
             })
