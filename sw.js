@@ -1,4 +1,4 @@
-const CACHE_NAME = 'reembolso-sf-cache-v2';
+const CACHE_NAME = 'reembolso-sf-cache-v1';
 const URLS_TO_CACHE = [
   './',
   './index.html',
@@ -18,17 +18,34 @@ self.addEventListener('install', event => {
   );
 });
 
-// Evento de Fetch: Intercepta as requisições
+// Evento de Fetch: ALTERADO para a estratégia Network First para a página
 self.addEventListener('fetch', event => {
+  // Se for uma requisição de navegação (para a página html)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          // Se a resposta da rede for bem-sucedida, clona e guarda no cache
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then(cache => {
+              cache.put(event.request, responseToCache);
+            });
+          return response;
+        })
+        .catch(() => {
+          // Se a rede falhar, busca no cache
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // Para todas as outras requisições (imagens, scripts, etc.), usa Cache First
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // Se encontrar no cache, retorna a resposta do cache
-        if (response) {
-          return response;
-        }
-        // Se não, busca na rede
-        return fetch(event.request);
+        return response || fetch(event.request);
       })
   );
 });
