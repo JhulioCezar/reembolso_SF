@@ -201,6 +201,7 @@
     function validarFormulario() {
         const nome = document.getElementById("nomeSolicitante").value.trim();
         if (nome === "") { alert("Por favor, preencha o nome do solicitante."); return false; }
+        
         let despesaInvalida = false;
         document.querySelectorAll('#tabelaDespesas tbody tr').forEach((linha) => {
             const data = linha.querySelector('input[type="date"]').value;
@@ -209,6 +210,7 @@
             if ((descricao !== '' || valor !== '') && data === '') { despesaInvalida = true; }
         });
         if (despesaInvalida) { alert("Por favor, preencha a data para todas as despesas informadas."); return false; }
+        
         const tipoPix = document.getElementById("tipoPix").value;
         let pix = document.getElementById("chavePixInput").value.trim();
         let isValidPix = true;
@@ -221,6 +223,14 @@
             case 'aleatoria': if (pix.length === 0) { isValidPix = false; mensagemErro = "A Chave Aleatória não pode ser vazia."; } break;
         }
         if (!isValidPix) { alert("Erro na Chave Pix: " + mensagemErro); return false; }
+        
+        // ▼▼▼ BLOCO ADICIONADO ▼▼▼
+        if (comprovantes.length === 0) {
+            alert("Por favor, anexe pelo menos um comprovante antes de continuar.");
+            return false;
+        }
+        // ▲▲▲ FIM DO BLOCO ADICIONADO ▲▲▲
+
         return true;
     }
     
@@ -328,7 +338,6 @@
             pdf.text(`Tipo de Chave: ${tipoPix}`, col1X, y);
             pdf.text(`Chave: ${chavePix}`, col2X, y);
             
-            // ▼▼▼ BLOCO ALTERADO ▼▼▼
             let signatureY = y + 25;
             if (signatureY > 220) {
                 pdf.addPage();
@@ -346,7 +355,6 @@
 
             pdf.line(signatureCenterX, signatureY + 26, signatureCenterX + signatureWidth, signatureY + 26);
             pdf.text(supervisor || "Assinatura do Supervisor", pageWidth / 2, signatureY + 31, { align: 'center', fontStyle: 'bold' });
-            // ▲▲▲ FIM DO BLOCO ALTERADO ▲▲▲
 
             comprovantes.forEach((comprovante, index) => {
                 pdf.addPage();
