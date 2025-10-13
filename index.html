@@ -67,7 +67,18 @@
     .modal button.btn-danger { background-color: #d9534f; color: white; border: none; }
     
     /* ESTILOS PARA GERAÇÃO DE PDF (html2canvas) */
-    /* Estes estilos são aplicados via JS para formatar a saída do PDF */
+    /* O .pdf-generation-mode será aplicado via JS antes de gerar o PDF */
+    .pdf-generation-mode .add-row,
+    .pdf-generation-mode .remove-row,
+    .pdf-generation-mode .comprovante-actions,
+    .pdf-generation-mode #lista-comprovantes,
+    .pdf-generation-mode .assinatura-btns,
+    .pdf-generation-mode .btn-print,
+    .pdf-generation-mode .btn-secondary,
+    .pdf-generation-mode .btn-danger,
+    .pdf-generation-mode .remove-arquivo {
+        display: none !important;
+    }
     .pdf-generation-mode #tabelaDespesas input,
     .pdf-generation-mode #supervisorNome {
         border: none !important;
@@ -79,16 +90,6 @@
     .pdf-generation-mode input[type=number] {
         -moz-appearance: textfield; /* Remove setas no Firefox */
     }
-    /* CORREÇÃO DE LINHA DIAGONAL NO PDF */
-    .pdf-generation-mode .assinatura-line {
-        border-top: 1px solid #000 !important;
-        width: 100% !important;
-        max-width: 300px !important;
-        /* Ajuste o margin-top para um valor menor, pois no PDF o contexto é diferente */
-        margin: 5px auto 0 auto !important;
-        transform: none !important; /* Essencial para evitar a diagonal */
-    }
-    /* FIM DA CORREÇÃO */
     
     @media print {
         body { background: #fff; }
@@ -190,8 +191,7 @@
         <div class="assinatura-bloco">
             <div class="assinatura">
                 <p><strong>Assinatura do Supervisor:</strong></p> 
-                <div class="assinatura-line"></div>
-                <input type="text" id="supervisorNome" placeholder="Nome do Supervisor por Extenso" autocapitalize="words" />
+                <div class="assinatura-line"></div>                 <input type="text" id="supervisorNome" placeholder="Nome do Supervisor por Extenso" autocapitalize="words" />
             </div>
         </div>
     </div>
@@ -363,8 +363,13 @@
             pdf.line(solicitanteX, signatureY + 26, solicitanteX + 70, signatureY + 26);
             pdf.setFont(undefined, 'bold');
             pdf.text("Assinatura do Solicitante", solicitanteX + 35, signatureY + 31, { align: 'center' });
-            pdf.line(supervisorX, signatureY + 26, supervisorX + 70, supervisorX + 26);
+            // CORRIGIDO: Desenha a linha do Supervisor diretamente no PDF
+            pdf.line(supervisorX, signatureY + 26, supervisorX + 70, signatureY + 26);
+            pdf.setFont(undefined, 'bold');
             pdf.text(supervisor, supervisorX + 35, signatureY + 31, { align: 'center', fontStyle: 'bold' });
+            pdf.setFont(undefined, 'normal');
+            pdf.text("Assinatura do Supervisor", supervisorX + 35, signatureY + 36, { align: 'center' });
+            // FIM DA CORREÇÃO
             comprovantes.forEach((comprovante, index) => {
                 pdf.addPage();
                 const title = `Comprovante ${index + 1}`;
