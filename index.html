@@ -1,495 +1,642 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Solicitação de Reembolso - Sem Fronteiras</title>
-  <link rel="manifest" href="manifest.json" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; background-color: #f7f9fb; margin: 0; padding: 0; }
-    .container {
-        width: 95%;
-        max-width: 800px;
-        background-color: #fff;
-        margin: 20px auto;
-        padding: 30px 50px;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        box-sizing: border-box;
-    }
-    .header { text-align: center; padding: 15px 0; }
-    .header img { max-height: 80px; width: auto; }
-    .titulo { text-align: center; background-color: #1c6ba0; color: white; font-weight: bold; padding: 10px; border-radius: 4px; margin: 25px 0 30px 0; font-size: 20px; }
-    label { font-weight: bold; }
-    input, textarea, select { width: 100%; padding: 6px; margin-top: 4px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; background-color: #fff; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: none; padding: 12px 8px; text-align: center; vertical-align: middle; border-bottom: 1px solid #eee; }
-    th { background-color: transparent; border-bottom: 2px solid #1c6ba0; font-weight: bold; }
-    .add-row { background-color: #0072bb; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-top: 10px; }
-    .remove-row { color: red; cursor: pointer; font-weight: bold; user-select: none; }
-    .total { text-align: right; font-weight: bold; font-size: 1.1em; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
-    .comprovante-container { display: flex; align-items: center; margin-top: 30px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; flex-wrap: wrap; }
-    .comprovante-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-    .comprovante-actions strong { font-size: 1em; margin-right: 15px; }
-    .anexo-btn { background-color:#0072bb; color:white; border: none; padding: 8px 12px; font-size: 0.9em; border-radius:4px; cursor:pointer; margin: 0 5px; white-space: nowrap; }
-    #lista-comprovantes { display: flex; flex-wrap: wrap; gap: 8px; margin-left: 15px; align-items: center; }
-    .arquivo-item { background-color: #e9ecef; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; display: flex; align-items: center; }
-    .remove-arquivo { margin-left: 8px; color: #d9534f; font-weight: bold; cursor: pointer; }
-    .assinaturas-container { display: flex; justify-content: space-around; align-items: flex-start; margin-top: 40px; gap: 30px; }
-    .assinatura-bloco { flex: 1; text-align: center; }
-    .assinatura { margin-top: 0; text-align: center; }
-    #signature-pad { border: 2px solid #ccc; border-radius: 6px; width: 100%; max-width: 300px; height: 120px; margin: 0 auto; background-color: #fafafa; cursor: crosshair; touch-action: none; }
-    .assinatura-btns button { background-color: #0072bb; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer; }
-    .assinatura-line { border-top: 1px solid #000; width: 100%; max-width: 300px; margin: 135px auto 0 auto; }
-    #supervisorNome { display: block; width: 100%; max-width: 300px; margin: 8px auto 0 auto; text-align: center; }
-    .btn-print { background-color: #5cb85c; color: white; }
-    .btn-secondary { background-color: #0072bb; color: white; margin-right: 10px; }
-    .btn-danger { background-color: #d9534f; color: white; }
-    .btn-print, .btn-secondary, .btn-danger { border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 20px; }
-    .pix-group { display: flex; gap: 15px; flex-wrap: wrap; }
-    #print-only-content { display: none; }
-    
-    .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(0,0,0,0.5); z-index: 100; display: none;
-    }
-    .modal {
-        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        background-color: white; padding: 25px; border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 101; display: none;
-        width: 90%; max-width: 350px; text-align: center;
-    }
-    .modal p { margin-top: 0; font-weight: bold; font-size: 1.1em; }
-    .modal button { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ccc; background-color: #f0f0f0; cursor: pointer; font-size: 1em; }
-    .modal button.btn-danger { background-color: #d9534f; color: white; border: none; }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Solicitação de Reembolso - Sem Fronteiras</title>
 
-    @media print {
-        body { background: #fff; }
-        .container { box-shadow: none; margin: 0; width: auto; border-radius: 0; }
-        .add-row, .remove-row, .anexo-btn, .assinatura-btns, .btn-print, .btn-secondary, .btn-danger,
-        .comprovante-container { display: none !important; }
-        input, select, textarea { border: none !important; background-color: transparent !important; box-shadow: none !important; -webkit-appearance: none; -moz-appearance: none; appearance: none; }
-        #print-only-content { display: block !important; }
-        #tabelaDespesas input, #tabelaDespesas .remove-row { display: none !important; }
-        .print-value { display: block !important; font-size: 10pt; text-align: center; }
-        #tabelaDespesas { table-layout: fixed; width: 100%; border-collapse: collapse; }
-        #tabelaDespesas th, #tabelaDespesas td { border: none; border-bottom: 1px solid #ccc; padding: 8px; }
-        #tabelaDespesas th { border-bottom: 2px solid #000; }
-        .print-page { page-break-before: always; text-align: center; padding-top: 40px; }
-        .print-page img { max-width: 90%; max-height: 80vh; border: 1px solid #ccc; }
-    }
-    
-    @media (max-width: 768px) {
-        .container {
-            width: 100%;
-            margin: 0;
-            padding: 15px;
-            border-radius: 0;
-            box-shadow: none;
-        }
-        .pix-group, .assinaturas-container {
-            flex-direction: column;
-            gap: 20px;
-        }
-        .assinatura-bloco {
-            width: 100%;
-            max-width: 350px;
-            margin: 0 auto;
-        }
-        .assinatura-line {
-            margin-top: 40px;
-        }
-        .header img {
-            max-height: 60px;
-        }
-        .titulo {
-            font-size: 18px;
-        }
-        .comprovante-container {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 15px;
-        }
-        #lista-comprovantes {
-            margin-left: 0;
-        }
-    }
-  </style>
+<!-- libs para gerar PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+:root{--blue:#1c6ba0;--accent:#0072bb;--green:#5cb85c;--danger:#d9534f}
+body{font-family:Arial,Helvetica,sans-serif;background:#f7f9fb;margin:0;padding:20px}
+.container{max-width:920px;margin:16px auto;background:#fff;padding:26px;border-radius:8px;box-shadow:0 6px 30px rgba(0,0,0,.06)}
+.header{text-align:center;margin-bottom:6px}.header img{max-height:80px}
+.titulo{text-align:center;background:var(--blue);color:#fff;padding:10px;border-radius:6px;font-weight:700;margin:10px 0 20px}
+label{font-weight:700;display:block;margin-top:10px}
+input[type="text"],input[type="date"],input[type="number"],input[type="email"],select,textarea{width:100%;padding:8px;margin-top:6px;border:1px solid #ccc;border-radius:6px;box-sizing:border-box;background:#fff}
+textarea{min-height:80px}
+table{width:100%;border-collapse:collapse;margin-top:12px}
+th,td{padding:10px 8px;text-align:center;border-bottom:1px solid #eee;vertical-align:middle}
+th{font-weight:700;border-bottom:2px solid var(--blue)}
+.add-row{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;margin-top:10px}
+.remove-row{cursor:pointer;color:var(--danger);font-weight:700}
+.total{text-align:right;font-weight:700;margin-top:14px;padding-top:12px;border-top:1px solid #eee}
+.comprovante-container{display:flex;align-items:center;margin-top:18px;padding:10px;border:1px solid #ddd;border-radius:6px;flex-wrap:wrap}
+.comprovante-actions{display:flex;align-items:center;gap:8px}
+.anexo-btn{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
+#lista-comprovantes{display:flex;flex-wrap:wrap;gap:8px;margin-left:12px;align-items:center}
+.arquivo-item{background:#eef2f5;padding:6px 10px;border-radius:6px;font-size:0.9em;display:flex;align-items:center;gap:8px}
+.remove-arquivo{cursor:pointer;color:var(--danger);font-weight:700}
+.assinaturas-container{display:flex;justify-content:center;margin-top:28px}
+.assinatura-bloco{text-align:center}
+#supervisor-signature{border:2px solid #ccc;border-radius:6px;width:100%;max-width:360px;height:150px;margin:10px auto;background:#fafafa;touch-action:none;display:block}
+.assinatura-btns{display:flex;justify-content:center;gap:10px;margin-top:8px}
+.assinatura-btns button{background:var(--accent);color:#fff;border:none;padding:8px 10px;border-radius:6px;cursor:pointer}
+.assinatura-line{border-top:1px solid #000;width:100%;max-width:360px;margin:12px auto 0}
+#supervisorNome{display:block;width:100%;max-width:360px;margin:8px auto 0 auto;text-align:center}
+.controls{text-align:center;margin-top:20px}
+.btn-print{background:var(--green);color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;margin-right:8px}
+.btn-secondary{background:var(--accent);color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;margin-right:8px}
+.btn-danger{background:var(--danger);color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer}
+.modal-overlay{position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.45);z-index:9999;display:none}
+.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 30px rgba(0,0,0,.2);z-index:10000;display:none;width:92%;max-width:380px;text-align:center}
+.modal button{width:100%;padding:12px;border-radius:6px;border:1px solid #ccc;background:#f4f4f4;margin-bottom:10px;cursor:pointer}
+@media (max-width:768px){.container{padding:14px}.assinatura-line{margin-top:30px}.header img{max-height:60px}}
+@media print{
+  .add-row,.remove-row,.anexo-btn,.assinatura-btns,.btn-print,.btn-secondary,.btn-danger,.comprovante-container{display:none!important}
+  #print-only-content{display:block}
+  input,textarea,select{border:none!important;background:transparent!important;box-shadow:none!important}
+}
+</style>
 </head>
 <body>
   <div class="container">
-    <div class="header"> <img src="https://i.imgur.com/dvzRyus.png" alt="Sem Fronteiras Logo"> </div>
+    <div class="header"><img src="https://i.imgur.com/dvzRyus.png" alt="Sem Fronteiras Logo"></div>
     <div class="titulo">Solicitação de Reembolso</div>
+
     <label for="nomeSolicitante">Nome do solicitante:</label>
-    <input type="text" id="nomeSolicitante" placeholder="Digite o nome completo" autocapitalize="words">
+    <input type="text" id="nomeSolicitante" placeholder="Digite o nome completo">
+
     <p>Venho por meio deste solicitar o reembolso das despesas informadas abaixo:</p>
+
     <table id="tabelaDespesas">
       <thead>
         <tr>
-          <th style="width: 20%;">Data</th>
-          <th style="width: 50%;">Descrição da Despesa</th>
-          <th style="width: 25%;">Valor (R$)</th>
-          <th style="width: 5%;"></th>
+          <th style="width:18%;">Data</th>
+          <th style="width:55%;">Descrição da Despesa</th>
+          <th style="width:20%;">Valor (R$)</th>
+          <th style="width:7%;"></th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
-    <button class="add-row" type="button" onclick="adicionarLinha()">+ Adicionar despesa</button>
+    <button class="add-row" type="button" id="btnAddLinha">+ Adicionar despesa</button>
+
     <div class="total">Total a Reembolsar: R$ <span id="total">0,00</span></div>
+
     <h3>Dados para transferência via Pix:</h3>
-    <div class="pix-group">
-        <div><label for="tipoPix">Tipo de Chave Pix:</label><select id="tipoPix" onchange="configurarInputPix()"><option value="cpf_cnpj">CPF/CNPJ</option><option value="celular">Celular (DD + Número)</option><option value="email">E-mail</option><option value="aleatoria">Chave Aleatória</option></select></div>
-        <div><label for="chavePixInput">Chave Pix:</label><input type="text" id="chavePixInput" placeholder="Digite o CPF ou CNPJ" /></div>
+    <div class="pix-group" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px">
+      <div style="flex:1;min-width:220px">
+        <label for="tipoPix">Tipo de Chave Pix:</label>
+        <select id="tipoPix" onchange="configurarInputPix()">
+          <option value="cpf_cnpj">CPF/CNPJ</option>
+          <option value="celular">Celular (DD + Número)</option>
+          <option value="email">E-mail</option>
+          <option value="aleatoria">Chave Aleatória</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:220px">
+        <label for="chavePixInput">Chave Pix:</label>
+        <input type="text" id="chavePixInput" placeholder="Digite a chave Pix">
+      </div>
     </div>
 
     <div class="comprovante-container">
       <div class="comprovante-actions">
-          <strong>Comprovantes:</strong>
-          <button class="anexo-btn" onclick="inserirComprovante()">Inserir Comprovante(s)</button>
+        <strong>Comprovantes:</strong>
+        <button class="anexo-btn" onclick="inserirComprovante()">Inserir Comprovante(s)</button>
       </div>
       <div id="lista-comprovantes"></div>
     </div>
 
     <div class="assinaturas-container">
-        <div class="assinatura-bloco">
-            <div class="assinatura">
-                <p><strong>Assinatura Digital do Solicitante:</strong></p>
-                <canvas id="signature-pad"></canvas>
-                <div class="assinatura-btns">
-                  <button type="button" onclick="limparAssinatura()">Limpar</button>
-                </div>
-            </div>
+      <div class="assinatura-bloco">
+        <p><strong>Assinatura do Supervisor / Encarregado:</strong></p>
+        <canvas id="supervisor-signature"></canvas>
+        <div class="assinatura-btns">
+          <button type="button" onclick="limparAssinaturaSupervisor()">Limpar</button>
+          <button type="button" onclick="document.getElementById('assinaturaUpload').click()">Inserir Assinatura Salva</button>
+          <input type="file" id="assinaturaUpload" accept="image/*" style="display:none" onchange="uploadAssinatura(event)">
         </div>
-        <div class="assinatura-bloco">
-            <div class="assinatura">
-                <p><strong>Assinatura do Supervisor:</strong></p> 
-                <div class="assinatura-line"></div>
-                <input type="text" id="supervisorNome" placeholder="Nome do Supervisor por Extenso" autocapitalize="words" />
-            </div>
-        </div>
+        <div class="assinatura-line"></div>
+        <input type="text" id="supervisorNome" placeholder="Nome do Supervisor por Extenso" style="margin-top:8px;display:block;">
+      </div>
     </div>
 
-    <div style="text-align:center;">
+    <div class="controls">
       <button class="btn-secondary" onclick="prepararEImprimir()">Imprimir</button>
       <button class="btn-print" onclick="gerarPDF()">Salvar em PDF</button>
       <button class="btn-danger" onclick="limparFormulario()">Limpar Formulário</button>
     </div>
 
-    <div id="print-only-content"></div>
+    <div id="print-only-content" style="display:none"></div>
   </div>
 
   <div id="comprovante-modal-overlay" class="modal-overlay" onclick="fecharModalComprovante()"></div>
-  <div id="comprovante-modal" class="modal">
+  <div id="comprovante-modal" class="modal" role="dialog" aria-modal="true">
     <p>Adicionar comprovante</p>
-    <button onclick="escolherOpcaoComprovante('camera')">📷 Abrir Câmera</button>
-    <button onclick="escolherOpcaoComprovante('arquivo')">📁 Procurar Arquivos</button>
-    <button class="btn-danger" onclick="fecharModalComprovante()">Cancelar</button>
+    <button type="button" onclick="escolherOpcaoComprovante('camera')">📷 Abrir Câmera</button>
+    <button type="button" onclick="escolherOpcaoComprovante('arquivo')">📁 Procurar Arquivos</button>
+    <button type="button" class="btn-danger" onclick="fecharModalComprovante()">Cancelar</button>
   </div>
 
-  <script>
-    let signatureCanvas, signatureCtx, signatureDrawing = false;
-    let comprovantes = [];
-    const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    const hoje = new Date();
-    const dia = String(hoje.getDate()).padStart(2, '0');
-    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-    const ano = hoje.getFullYear();
-    const dataMaxima = `${ano}-${mes}-${dia}`;
+<script>
+/* ===== Estado global ===== */
+let comprovantes = [];
+let supervisorCanvas, supervisorCtx, supervisorDrawing = false;
+let assinaturaSupervisorImagem = null;
 
-    function validarFormulario() {
-        const nome = document.getElementById("nomeSolicitante").value.trim();
-        if (nome === "") { alert("Por favor, preencha o nome do solicitante."); return false; }
-        
-        let despesaInvalida = false;
-        document.querySelectorAll('#tabelaDespesas tbody tr').forEach((linha) => {
-            const data = linha.querySelector('input[type="date"]').value;
-            const descricao = linha.querySelector('input[type="text"]').value.trim();
-            const valor = linha.querySelector('input[type="number"]').value.trim();
-            if ((descricao !== '' || valor !== '') && data === '') { despesaInvalida = true; }
-        });
-        if (despesaInvalida) { alert("Por favor, preencha a data para todas as despesas informadas."); return false; }
-        
-        const tipoPix = document.getElementById("tipoPix").value;
-        let pix = document.getElementById("chavePixInput").value.trim();
-        let isValidPix = true;
-        let mensagemErro = "";
-        if (tipoPix === 'cpf_cnpj' || tipoPix === 'celular') { pix = pix.replace(/[\.\-\/()\s]/g, ''); }
-        switch (tipoPix) {
-            case 'cpf_cnpj': if (pix.length !== 11 && pix.length !== 14) { isValidPix = false; mensagemErro = "O CPF deve ter 11 dígitos e o CNPJ 14."; } break;
-            case 'celular': if (pix.length < 10 || pix.length > 11) { isValidPix = false; mensagemErro = "O celular deve conter DDD e 8 ou 9 dígitos."; } break;
-            case 'email': if (!regexEmail.test(pix)) { isValidPix = false; mensagemErro = "O formato do E-mail está inválido."; } break;
-            case 'aleatoria': if (pix.length === 0) { isValidPix = false; mensagemErro = "A Chave Aleatória não pode ser vazia."; } break;
+/* ===== Util: converter imagem remota para base64 ===== */
+function getImageBase64(url){
+  return new Promise((resolve,reject)=>{
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = ()=> {
+      const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+      const ctx = c.getContext('2d'); ctx.drawImage(img,0,0);
+      resolve(c.toDataURL('image/png'));
+    };
+    img.onerror = (e)=> reject(e);
+    img.src = url;
+  });
+}
+
+/* ===== Capitalização (onblur) - preserva acentos e permite espaços ===== */
+function capitalizarNomeProprioInput(inputEl){
+  if(!inputEl) return;
+  const excecoes = ['e','de','da','do','das','dos','von','van','y','la','le','el'];
+  const textoOriginal = (inputEl.value || '').trim().replace(/\s+/g,' ');
+  if(!textoOriginal) { inputEl.value = ''; return; }
+  const partes = textoOriginal.split(' ').map(p => p.trim()).filter(Boolean);
+  const resultado = partes.map((p,idx)=>{
+    const lower = p.toLowerCase();
+    if(idx>0 && excecoes.includes(lower)) return lower;
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  });
+  inputEl.value = resultado.join(' ');
+}
+
+/* ===== Bloquear datas futuras nos inputs date ===== */
+function aplicarRestricaoData() {
+  const hoje = new Date().toISOString().split("T")[0];
+  document.querySelectorAll('input[type="date"]').forEach(input => {
+    input.setAttribute("max", hoje);
+  });
+}
+
+/* ===== Setup canvas do supervisor (retina-aware) ===== */
+function setupAssinaturaSupervisor(){
+  supervisorCanvas = document.getElementById('supervisor-signature');
+  if(!supervisorCanvas) return;
+  function ajustar(){
+    const ratio = window.devicePixelRatio || 1;
+    const style = getComputedStyle(supervisorCanvas);
+    const w = parseInt(style.width);
+    const h = parseInt(style.height);
+    supervisorCanvas.width = w * ratio;
+    supervisorCanvas.height = h * ratio;
+    supervisorCanvas.style.width = w + 'px';
+    supervisorCanvas.style.height = h + 'px';
+    supervisorCtx = supervisorCanvas.getContext('2d');
+    supervisorCtx.scale(ratio, ratio);
+    supervisorCtx.lineWidth = 2;
+    supervisorCtx.lineCap = 'round';
+    supervisorCtx.strokeStyle = '#000';
+  }
+  ajustar();
+  window.addEventListener('resize', ajustar);
+
+  function getPos(e){
+    const rect = supervisorCanvas.getBoundingClientRect();
+    if(e.touches && e.touches.length){
+      const t = e.touches[0];
+      return {x: t.clientX - rect.left, y: t.clientY - rect.top};
+    } else {
+      return {x: e.clientX - rect.left, y: e.clientY - rect.top};
+    }
+  }
+
+  supervisorCanvas.addEventListener('mousedown', e=>{
+    assinaturaSupervisorImagem = null;
+    supervisorDrawing = true;
+    const p = getPos(e);
+    supervisorCtx.beginPath(); supervisorCtx.moveTo(p.x,p.y);
+  });
+  document.addEventListener('mousemove', e=>{
+    if(!supervisorDrawing) return;
+    const p = getPos(e);
+    supervisorCtx.lineTo(p.x,p.y);
+    supervisorCtx.stroke();
+  });
+  document.addEventListener('mouseup', ()=> supervisorDrawing=false);
+
+  supervisorCanvas.addEventListener('touchstart', e=>{
+    e.preventDefault(); assinaturaSupervisorImagem = null; supervisorDrawing = true;
+    const p = getPos(e);
+    supervisorCtx.beginPath(); supervisorCtx.moveTo(p.x,p.y);
+  }, {passive:false});
+  supervisorCanvas.addEventListener('touchmove', e=>{
+    e.preventDefault(); if(!supervisorDrawing) return;
+    const p = getPos(e); supervisorCtx.lineTo(p.x,p.y); supervisorCtx.stroke();
+  }, {passive:false});
+  supervisorCanvas.addEventListener('touchend', ()=> supervisorDrawing=false);
+}
+
+/* ===== Limpar e upload assinatura (substitui desenho) ===== */
+function limparAssinaturaSupervisor(){
+  if(!supervisorCtx||!supervisorCanvas) return;
+  assinaturaSupervisorImagem = null;
+  supervisorCtx.clearRect(0,0,supervisorCanvas.width,supervisorCanvas.height);
+}
+function uploadAssinatura(e){
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const style = getComputedStyle(supervisorCanvas);
+      const w = parseInt(style.width), h = parseInt(style.height);
+      supervisorCtx.clearRect(0,0,supervisorCanvas.width,supervisorCanvas.height);
+      supervisorCtx.drawImage(img, 0, 0, w, h);
+      assinaturaSupervisorImagem = supervisorCanvas.toDataURL('image/png');
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ===== Comprovantes (modal + múltiplos arquivos) ===== */
+const modal = document.getElementById('comprovante-modal');
+const overlay = document.getElementById('comprovante-modal-overlay');
+
+function inserirComprovante(){
+  modal.style.display='block'; overlay.style.display='block';
+}
+function fecharModalComprovante(){
+  modal.style.display='none'; overlay.style.display='none';
+}
+function escolherOpcaoComprovante(tipo){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/jpeg,image/png';
+  if(tipo==='camera') input.setAttribute('capture','environment');
+  else input.multiple = true;
+  input.onchange = e=>{
+    const files = e.target.files;
+    if(!files || !files.length) return;
+    for(const file of files){
+      const reader = new FileReader();
+      reader.onload = ev=>{
+        comprovantes.push({ filename: file.name, src: ev.target.result });
+        renderizarComprovantes();
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  input.click();
+  fecharModalComprovante();
+}
+function renderizarComprovantes(){
+  const listaArea = document.getElementById('lista-comprovantes');
+  listaArea.innerHTML = '';
+  comprovantes.forEach((c,i)=>{
+    const item = document.createElement('div'); item.className='arquivo-item';
+    const nome = document.createElement('span'); nome.textContent = c.filename || `Comprovante ${i+1}`;
+    const rm = document.createElement('span'); rm.className='remove-arquivo'; rm.innerHTML='&times;';
+    rm.onclick = ()=>{ comprovantes.splice(i,1); renderizarComprovantes(); };
+    item.appendChild(nome); item.appendChild(rm);
+    listaArea.appendChild(item);
+  });
+}
+
+/* ===== Tabela despesas ===== */
+function adicionarLinha(){
+  const tbody = document.querySelector('#tabelaDespesas tbody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><input type="date" max="${new Date().toISOString().split('T')[0]}"></td>
+                  <td><input type="text" class="descricao-despesa" placeholder="Descreva a despesa"></td>
+                  <td><input type="number" class="valor" step="0.01" min="0" placeholder="0.00"></td>
+                  <td><span class="remove-row" title="Remover linha">✖</span></td>`;
+  tbody.appendChild(tr);
+  atualizarEventos();
+  aplicarRestricaoData();
+}
+function atualizarEventos(){
+  document.querySelectorAll('.valor').forEach(input=>{
+    input.oninput = calcularTotal;
+    input.onblur = function(){ const v = parseFloat(this.value); if(!isNaN(v)) this.value = v.toFixed(2); };
+  });
+  document.querySelectorAll('.remove-row').forEach(btn=>{
+    btn.onclick = function(){ this.closest('tr').remove(); calcularTotal(); };
+  });
+  document.querySelectorAll('.descricao-despesa').forEach(input=>{
+    input.oninput = function(){
+      this.value = this.value.split(' ').map(w=>{ if(!w) return ''; return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase(); }).join(' ');
+    };
+  });
+  calcularTotal();
+}
+function calcularTotal(){
+  let total = 0;
+  document.querySelectorAll('.valor').forEach(i=>{
+    const v = parseFloat(i.value); if(!isNaN(v)) total += v;
+  });
+  document.getElementById('total').textContent = total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+/* ===== Configurar input Pix e formatação automática ===== */
+function configurarInputPix(){
+  const tipo = document.getElementById('tipoPix').value;
+  const input = document.getElementById('chavePixInput');
+  input.oninput = null; input.value = ''; input.removeAttribute('maxlength'); input.removeAttribute('inputmode'); input.setAttribute('type','text');
+  switch(tipo){
+    case 'cpf_cnpj':
+      input.placeholder='Digite o CPF ou CNPJ';
+      input.setAttribute('inputmode','numeric'); input.setAttribute('maxlength','18');
+      input.oninput = function(){
+        let v = this.value.replace(/\D/g,'');
+        if(v.length <= 11){ // CPF
+          v = v.replace(/(\d{3})(\d)/,'$1.$2');
+          v = v.replace(/(\d{3})(\d)/,'$1.$2');
+          v = v.replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+        } else { // CNPJ
+          v = v.replace(/^(\d{2})(\d)/,'$1.$2');
+          v = v.replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3');
+          v = v.replace(/\.(\d{3})(\d)/,'.$1/$2');
+          v = v.replace(/(\d{4})(\d{2})$/,'$1-$2');
         }
-        if (!isValidPix) { alert("Erro na Chave Pix: " + mensagemErro); return false; }
-        
-        // ▼▼▼ BLOCO ADICIONADO ▼▼▼
-        if (comprovantes.length === 0) {
-            alert("Por favor, anexe pelo menos um comprovante antes de continuar.");
-            return false;
+        this.value = v;
+      };
+      break;
+    case 'celular':
+      input.placeholder='Ex: (99) 98765 4321'; input.setAttribute('type','tel'); input.setAttribute('inputmode','tel');
+      input.oninput = function(){
+        let v = this.value.replace(/\D/g,'');
+        v = v.replace(/^(\d{2})(\d)/g,'($1) $2');
+        v = v.replace(/(\d{5})(\d{4})$/,'$1 $2');
+        this.value = v;
+      };
+      break;
+    case 'email':
+      input.placeholder='Ex: seu.email@dominio.com'; input.setAttribute('type','email');
+      break;
+    case 'aleatoria':
+      input.placeholder='Digite a chave';
+      break;
+  }
+}
+
+/* ===== Validação de formato da chave Pix (usada em validarFormulario) ===== */
+function validarChavePixFormato(tipo, chave){
+  const texto = (document.getElementById('tipoPix').options[document.getElementById('tipoPix').selectedIndex].text || '').toLowerCase();
+  const somente = chave.replace(/\D/g,'');
+  if(texto.includes('cpf')){
+    return somente.length === 11;
+  }
+  if(texto.includes('cnpj')){
+    return somente.length === 14;
+  }
+  if(texto.includes('celular') || texto.includes('telefone')){
+    return somente.length === 11;
+  }
+  if(texto.includes('email')){
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(chave);
+  }
+  return chave.length > 0;
+}
+
+/* ===== Validar formulário (antes de gerar PDF) ===== */
+function validarFormulario(){
+  const faltando = [];
+
+  const nome = document.getElementById('nomeSolicitante').value.trim();
+  if(!nome) faltando.push("Nome do solicitante");
+
+  const tipoPix = document.getElementById('tipoPix').value;
+  if(!tipoPix) faltando.push("Tipo de chave Pix");
+
+  const chavePix = document.getElementById('chavePixInput').value.trim();
+  if(!chavePix) faltando.push("Chave Pix");
+  else if(!validarChavePixFormato(tipoPix, chavePix)) {
+    // detectar qual mensagem específica
+    const texto = document.getElementById('tipoPix').options[document.getElementById('tipoPix').selectedIndex].text.toLowerCase();
+    if(texto.includes('cpf')) faltando.push("Chave Pix inválida: CPF precisa conter 11 dígitos");
+    else if(texto.includes('cnpj')) faltando.push("Chave Pix inválida: CNPJ precisa conter 14 dígitos");
+    else if(texto.includes('celular') || texto.includes('telefone')) faltando.push("Chave Pix inválida: telefone precisa conter 11 dígitos");
+    else if(texto.includes('email')) faltando.push("Chave Pix inválida: e-mail inválido");
+  }
+
+  const supervisor = document.getElementById('supervisorNome').value.trim();
+  if(!supervisor) faltando.push("Nome do supervisor/encarregado");
+
+  // despesas
+  const linhas = document.querySelectorAll('#tabelaDespesas tbody tr');
+  let temDespesa = false;
+  let despesaInvalida = false;
+  linhas.forEach((row, idx)=>{
+    const data = row.querySelector('input[type="date"]')?.value.trim();
+    const desc = row.querySelector('input[type="text"]')?.value.trim();
+    const val = parseFloat(row.querySelector('input[type="number"]')?.value || "0");
+    if(data || desc || val > 0) {
+      temDespesa = true;
+      // checar campos vazios ou valor <= 0
+      if(!data || !desc || val <= 0) {
+        despesaInvalida = true;
+        faltando.push(`Despesa inválida ou incompleta na linha ${idx+1}`);
+      } else {
+        // checar data futura (embora também tenhamos max no input)
+        const hoje = new Date(); hoje.setHours(0,0,0,0);
+        const dataDesp = new Date(data + "T00:00:00");
+        if(dataDesp > hoje) {
+          despesaInvalida = true;
+          faltando.push(`Data futura inválida (${data}) na linha ${idx+1}`);
         }
-        // ▲▲▲ FIM DO BLOCO ADICIONADO ▲▲▲
-
-        return true;
+      }
     }
-    
-    function capitalizarNomeProprio(nome) { if (!nome) return ''; const excecoes = ['e', 'de', 'da', 'do', 'das', 'dos']; return nome.toLowerCase().split(' ').map((palavra, index) => { if (index > 0 && excecoes.includes(palavra)) { return palavra; } return palavra.charAt(0).toUpperCase() + palavra.slice(1); }).join(' '); }
-    
-    function getImageBase64(url) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.crossOrigin = 'Anonymous';
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                resolve(canvas.toDataURL('image/png'));
-            };
-            img.onerror = reject;
-            img.src = url;
-        });
+  });
+  if(!temDespesa) faltando.push("Ao menos uma despesa preenchida");
+  // comprovantes
+  if(comprovantes.length === 0) faltando.push("Pelo menos um comprovante anexado");
+
+  if(faltando.length > 0){
+    alert("⚠️ Antes de gerar o PDF, corrija os seguintes pontos:\n\n• " + faltando.join("\n• "));
+    return false;
+  }
+  return true;
+}
+
+/* ===== Preparar impressão ===== */
+function prepararEImprimir(){
+  if(!validarFormulario()) return;
+  document.querySelectorAll('#tabelaDespesas tbody td').forEach(cell=>{
+    const inp = cell.querySelector('input');
+    if(inp){
+      let txt = inp.type==='date' && inp.value ? inp.value.split('-').reverse().join('/') : inp.value;
+      const span = document.createElement('span'); span.className='print-value'; span.textContent = txt;
+      cell.appendChild(span);
     }
+  });
+  const printContent = document.getElementById('print-only-content'); printContent.innerHTML='';
+  comprovantes.forEach((c,i)=>{
+    const page = document.createElement('div'); page.className='print-page';
+    const title = document.createElement('h2'); title.textContent = `Comprovante ${i+1}`;
+    const img = document.createElement('img'); img.src = c.src; img.style.maxWidth='90%'; img.style.maxHeight='80vh';
+    page.appendChild(title); page.appendChild(img); printContent.appendChild(page);
+  });
+  setTimeout(()=> window.print(),120);
+}
+window.onafterprint = ()=>{ document.querySelectorAll('.print-value').forEach(s=>s.remove()); document.getElementById('print-only-content').innerHTML=''; };
 
-    async function gerarPDF() {
-        if (!validarFormulario()) { return; }
-        try {
-            const logoUrl = 'https://i.imgur.com/dvzRyus.png';
-            const logoBase64 = await getImageBase64(logoUrl);
-            const nome = document.getElementById("nomeSolicitante").value;
-            const tipoPixSelect = document.getElementById("tipoPix");
-            const tipoPix = tipoPixSelect.options[tipoPixSelect.selectedIndex].text;
-            const chavePix = document.getElementById("chavePixInput").value;
-            const supervisor = document.getElementById("supervisorNome").value;
-            const total = document.getElementById("total").textContent;
-            const assinaturaImg = signatureCanvas.toDataURL('image/png');
-            const despesas = [];
-            document.querySelectorAll('#tabelaDespesas tbody tr').forEach(row => {
-                const dataInput = row.querySelector('input[type="date"]');
-                const descricaoInput = row.querySelector('input[type="text"]');
-                const valorInput = row.querySelector('input[type="number"]');
-                if (dataInput && descricaoInput && valorInput && (dataInput.value || descricaoInput.value || valorInput.value)) {
-                    despesas.push({
-                        data: dataInput.value ? dataInput.value.split('-').reverse().join('/') : '',
-                        descricao: descricaoInput.value,
-                        valor: parseFloat(valorInput.value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                    });
-                }
-            });
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            const margin = 15;
-            let y = 15;
-            const logoWidth = 50;
-            const logoX = (pageWidth - logoWidth) / 2;
-            pdf.addImage(logoBase64, 'PNG', logoX, y, logoWidth, 12);
-            y += 25;
-            pdf.setFontSize(18);
-            pdf.setFont(undefined, 'bold');
-            pdf.text("Solicitação de Reembolso", pageWidth / 2, y, { align: 'center' });
-            y += 15;
-            pdf.setFontSize(11);
-            pdf.setFont(undefined, 'normal');
-            const labelNome = "Nome do solicitante: ";
-            const labelNomeWidth = pdf.getTextWidth(labelNome);
-            pdf.text(labelNome, margin, y);
-            pdf.setFont(undefined, 'bold');
-            pdf.text(nome, margin + labelNomeWidth, y);
-            pdf.setFont(undefined, 'normal');
-            y += 7;
-            const introLines = pdf.splitTextToSize("Venho por meio deste solicitar o reembolso das despesas informadas abaixo:", pageWidth - (margin * 2));
-            pdf.text(introLines, margin, y);
-            y += (introLines.length * 5) + 5;
-            pdf.setFont(undefined, 'bold');
-            pdf.text("Data", margin, y);
-            pdf.text("Descrição da Despesa", margin + 30, y);
-            pdf.text("Valor (R$)", pageWidth - margin, y, { align: 'right' });
-            y += 2;
-            pdf.line(margin, y, pageWidth - margin, y);
-            y += 5;
-            pdf.setFont(undefined, 'bold');
-            despesas.forEach(d => {
-                const descLines = pdf.splitTextToSize(d.descricao, 110);
-                const rowHeight = (descLines.length * 5) + 3;
-                if (y + rowHeight > 270) {
-                    pdf.addPage();
-                    y = 20;
-                }
-                const textY = y + (rowHeight / 2) - 2;
-                pdf.text(d.data, margin, textY);
-                pdf.text(descLines, margin + 30, y);
-                pdf.text(d.valor, pageWidth - margin, textY, { align: 'right' });
-                y += rowHeight;
-            });
-            pdf.setFont(undefined, 'normal');
-            y += 5;
-            pdf.setFont(undefined, 'bold');
-            pdf.text(`Total a Reembolsar: R$ ${total}`, pageWidth - margin, y, { align: 'right' });
-            y += 15;
-            pdf.setFont(undefined, 'bold');
-            pdf.text("Dados para transferência via Pix:", margin, y);
-            y += 7;
-            pdf.setFont(undefined, 'normal');
-            const col1X = margin;
-            const col2X = pageWidth / 2;
-            pdf.text(`Tipo de Chave: ${tipoPix}`, col1X, y);
-            pdf.text(`Chave: ${chavePix}`, col2X, y);
-            
-            let signatureY = y + 25;
-            if (signatureY > 220) {
-                pdf.addPage();
-                signatureY = 30;
-            }
-            const signatureWidth = 70;
-            const signatureCenterX = (pageWidth - signatureWidth) / 2;
-            
-            pdf.addImage(assinaturaImg, 'PNG', signatureCenterX, signatureY, signatureWidth, 25);
-            pdf.line(signatureCenterX, signatureY + 26, signatureCenterX + signatureWidth, signatureY + 26);
-            pdf.setFont(undefined, 'bold');
-            pdf.text("Assinatura do Solicitante", pageWidth / 2, signatureY + 31, { align: 'center' });
-            
-            signatureY += 45;
+/* ===== Gerar PDF (com nome, pix formatado/negrito, assinatura e comprovantes) ===== */
+async function gerarPDF(){
+  if(!validarFormulario()) return;
+  try{
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p','mm','a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const margin = 15;
+    let y = 15;
 
-            pdf.line(signatureCenterX, signatureY + 26, signatureCenterX + signatureWidth, signatureY + 26);
-            pdf.text(supervisor || "Assinatura do Supervisor", pageWidth / 2, signatureY + 31, { align: 'center', fontStyle: 'bold' });
+    let logoBase64 = null;
+    try{ logoBase64 = await getImageBase64('https://i.imgur.com/dvzRyus.png'); } catch(e){ console.warn('Logo não adicionada:', e); }
+    if(logoBase64){ const logoW=50, logoX=(pageWidth-logoW)/2; pdf.addImage(logoBase64,'PNG',logoX,y,logoW,12); y+=18; }
 
-            comprovantes.forEach((comprovante, index) => {
-                pdf.addPage();
-                const title = `Comprovante ${index + 1}`;
-                const imgProps = pdf.getImageProperties(comprovante.src);
-                const innerMargin = 15;
-                const maxWidth = pdf.internal.pageSize.getWidth() - innerMargin * 2;
-                const maxHeight = pdf.internal.pageSize.getHeight() - innerMargin * 2 - 20;
-                const ratio = Math.min(maxWidth / imgProps.width, maxHeight / imgProps.height);
-                const w = imgProps.width * ratio;
-                const h = imgProps.height * ratio;
-                const x = (pdf.internal.pageSize.getWidth() - w) / 2;
-                const y_img = (pdf.internal.pageSize.getHeight() - h) / 2 + 10;
-                pdf.setFontSize(12);
-                pdf.text(title, pdf.internal.pageSize.getWidth() / 2, innerMargin, { align: 'center' });
-                pdf.addImage(comprovante.src, 'PNG', x, y_img, w, h);
-            });
-            pdf.save(`reembolso_${nome.replace(/\s+/g, '_')}.pdf`);
-        } catch (error) {
-            console.error("Erro ao gerar PDF:", error);
-            alert("Não foi possível gerar o PDF. Verifique sua conexão com a internet e tente novamente.");
-        }
-    }
+    pdf.setFontSize(18); pdf.setFont(undefined,'bold'); pdf.text('Solicitação de Reembolso', pageWidth/2, y, {align:'center'}); y+=10;
+    pdf.setFontSize(11); pdf.setFont(undefined,'normal');
 
-    function prepararEImprimir() { if (!validarFormulario()) { return; } document.querySelectorAll('#tabelaDespesas tbody td').forEach(cell => { const input = cell.querySelector('input'); if (input) { let valor = input.type === 'date' && input.value ? input.value.split('-').reverse().join('/') : input.value; const span = document.createElement('span'); span.className = 'print-value'; span.textContent = valor; cell.appendChild(span); } }); const printContent = document.getElementById('print-only-content'); printContent.innerHTML = ''; comprovantes.forEach((comprovante, index) => { const page = document.createElement('div'); page.className = 'print-page'; const title = document.createElement('h2'); title.textContent = `Comprovante ${index + 1}`; const img = document.createElement('img'); img.src = comprovante.src; page.appendChild(title); page.appendChild(img); printContent.appendChild(page); }); setTimeout(window.print, 100); }
-    
-    const modal = document.getElementById('comprovante-modal');
-    const overlay = document.getElementById('comprovante-modal-overlay');
+    const nome = document.getElementById('nomeSolicitante').value.trim() || '';
+    const tipoPixText = document.getElementById('tipoPix').options[document.getElementById('tipoPix').selectedIndex].text;
+    const chavePix = document.getElementById('chavePixInput').value.trim() || '';
+    const supervisorNome = document.getElementById('supervisorNome').value.trim() || '';
+    const total = document.getElementById('total').textContent || '0,00';
 
-    function inserirComprovante() {
-        modal.style.display = 'block';
-        overlay.style.display = 'block';
-    }
+    // Nome solicitante: label normal + nome em negrito
+    const labelNome = 'Nome do solicitante: ';
+    const labelWidth = pdf.getTextWidth(labelNome);
+    pdf.setFont(undefined,'normal'); pdf.text(labelNome, margin, y);
+    pdf.setFont(undefined,'bold'); pdf.text(nome, margin + labelWidth + 1, y);
+    y += 8;
 
-    function fecharModalComprovante() {
-        modal.style.display = 'none';
-        overlay.style.display = 'none';
-    }
+    const intro = 'Venho por meio deste solicitar o reembolso das despesas informadas abaixo:';
+    const introLines = pdf.splitTextToSize(intro, pageWidth - margin*2);
+    pdf.text(introLines, margin, y); y += (introLines.length*5)+4;
 
-    function escolherOpcaoComprovante(tipo) {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/jpeg,image/png';
+    pdf.setFont(undefined,'bold');
+    pdf.text('Data', margin, y); pdf.text('Descrição da Despesa', margin + 30, y);
+    pdf.text('Valor (R$)', pageWidth - margin, y, {align:'right'}); y+=3;
+    pdf.line(margin, y, pageWidth - margin, y); y += 6;
+    pdf.setFont(undefined,'normal');
 
-        if (tipo === 'camera') {
-            input.setAttribute('capture', 'environment');
-        } else {
-            input.multiple = true;
-        }
-
-        input.onchange = e => {
-            const files = e.target.files;
-            if (!files.length) return;
-            for (const file of files) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    comprovantes.push({ filename: file.name, src: event.target.result });
-                    renderizarComprovantes();
-                };
-                reader.readAsDataURL(file);
-            }
-        };
-        
-        input.click();
-        fecharModalComprovante();
-    }
-    
-    function renderizarComprovantes() { const listaArea = document.getElementById('lista-comprovantes'); listaArea.innerHTML = ''; comprovantes.forEach((comprovante, index) => { const item = document.createElement('div'); item.className = 'arquivo-item'; const nomeArquivo = document.createElement('span'); nomeArquivo.textContent = comprovante.filename; const removeBtn = document.createElement('span'); removeBtn.className = 'remove-arquivo'; removeBtn.innerHTML = '&times;'; removeBtn.onclick = function() { removerComprovante(index); }; item.appendChild(nomeArquivo); item.appendChild(removeBtn); listaArea.appendChild(item); }); }
-    function removerComprovante(index) { comprovantes.splice(index, 1); renderizarComprovantes(); }
-    function limparFormulario() { if (confirm("Tem certeza de que deseja limpar todos os campos do formulário?")) { document.getElementById('nomeSolicitante').value = ''; document.getElementById('supervisorNome').value = ''; document.querySelector('#tabelaDespesas tbody').innerHTML = ''; adicionarLinha(); comprovantes = []; renderizarComprovantes(); document.getElementById('tipoPix').value = 'cpf_cnpj'; configurarInputPix(); limparAssinatura(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
-    function adicionarLinha() { const tabelaBody = document.getElementById("tabelaDespesas").getElementsByTagName("tbody")[0]; const novaLinha = document.createElement("tr"); novaLinha.innerHTML = `<td><input type="date" max="${dataMaxima}" /></td><td><input type="text" class="descricao-despesa" placeholder="Descreva a despesa" /></td><td><input type="number" class="valor" step="0.01" min="0" placeholder="0.00" /></td><td><span class="remove-row" title="Remover linha">✖</span></td>`; tabelaBody.appendChild(novaLinha); atualizarEventos(); }
-    function atualizarEventos() { document.querySelectorAll(".valor").forEach(input => { input.oninput = calcularTotal; input.onblur = function() { const valor = parseFloat(this.value); if (!isNaN(valor)) { this.value = valor.toFixed(2); } }; }); document.querySelectorAll(".remove-row").forEach(btn => { btn.onclick = function() { this.closest("tr").remove(); calcularTotal(); }; }); document.querySelectorAll(".descricao-despesa").forEach(input => { input.oninput = function() { this.value = this.value.split(' ').map(word => { return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(); }).join(' '); }; }); calcularTotal(); }
-    
-    function configurarInputPix() {
-        const tipo = document.getElementById("tipoPix").value;
-        const input = document.getElementById("chavePixInput");
-        input.oninput = null; input.value = "";
-        input.setAttribute("type", "text");
-        input.removeAttribute("maxlength");
-        input.removeAttribute("inputmode");
-        switch (tipo) {
-            case 'cpf_cnpj':
-                input.setAttribute("placeholder", "Digite o CPF ou CNPJ");
-                input.setAttribute("inputmode", "numeric");
-                input.setAttribute("maxlength", "18");
-                input.oninput = function() {
-                    let value = this.value.replace(/\D/g, '');
-                    if (value.length > 14) value = value.substring(0, 14);
-                    if (value.length <= 11) {
-                        value = value.replace(/(\d{3})(\d)/, '$1.$2'); value = value.replace(/(\d{3})(\d)/, '$1.$2'); value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-                    } else {
-                        value = value.replace(/^(\d{2})(\d)/, '$1.$2'); value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3'); value = value.replace(/\.(\d{3})(\d)/, '.$1/$2'); value = value.replace(/(\d{4})(\d)/, '$1-$2');
-                    }
-                    this.value = value;
-                };
-                break;
-            case 'celular':
-                input.setAttribute("placeholder", "Ex: (99) 98765-4321");
-                input.setAttribute("type", "tel");
-                break;
-            case 'email':
-                input.setAttribute("placeholder", "Ex: seu.email@dominio.com");
-                input.setAttribute("type", "email");
-                break;
-            case 'aleatoria':
-                input.setAttribute("placeholder", "Digite a chave");
-                break;
-        }
-    }
-    
-    function calcularTotal() { let total = 0; document.querySelectorAll(".valor").forEach(input => { const val = parseFloat(input.value); if (!isNaN(val)) total += val; }); document.getElementById("total").textContent = total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-    function setupSignature() { signatureCanvas = document.getElementById("signature-pad"); if (!signatureCanvas) return; signatureCtx = signatureCanvas.getContext("2d"); signatureDrawing = false; signatureCanvas.addEventListener("mousedown", e => { signatureDrawing = true; signatureCtx.beginPath(); signatureCtx.moveTo(e.offsetX, e.offsetY); }); signatureCanvas.addEventListener("mousemove", e => { if (signatureDrawing) { signatureCtx.lineTo(e.offsetX, e.offsetY); signatureCtx.stroke(); } }); signatureCanvas.addEventListener("mouseup", () => signatureDrawing = false); signatureCanvas.addEventListener("mouseleave", () => signatureDrawing = false); signatureCanvas.addEventListener("touchstart", e => { e.preventDefault(); const touch = e.touches[0]; signatureDrawing = true; signatureCtx.beginPath(); signatureCtx.moveTo(touch.clientX - signatureCanvas.getBoundingClientRect().left, touch.clientY - signatureCanvas.getBoundingClientRect().top); }); signatureCanvas.addEventListener("touchmove", e => { e.preventDefault(); if (signatureDrawing) { const touch = e.touches[0]; signatureCtx.lineTo(touch.clientX - signatureCanvas.getBoundingClientRect().left, touch.clientY - signatureCanvas.getBoundingClientRect().top); signatureCtx.stroke(); } }); signatureCanvas.addEventListener("touchend", () => signatureDrawing = false); }
-    function limparAssinatura() { if (signatureCtx && signatureCanvas) { signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height); } }
-    window.onafterprint = function() { document.querySelectorAll('.print-value').forEach(span => span.remove()); document.getElementById('print-only-content').innerHTML = ''; }
-    
-    document.addEventListener("DOMContentLoaded", () => {
-      adicionarLinha();
-      setupSignature();
-      configurarInputPix();
-      const nomeSolicitanteInput = document.getElementById('nomeSolicitante');
-      const supervisorNomeInput = document.getElementById('supervisorNome');
-      nomeSolicitanteInput.addEventListener('input', function() { this.value = capitalizarNomeProprio(this.value); });
-      supervisorNomeInput.addEventListener('input', function() { this.value = capitalizarNomeProprio(this.value); });
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(registration => {
-              console.log('ServiceWorker registrado com sucesso:', registration.scope);
-            })
-            .catch(error => {
-              console.log('Falha no registro do ServiceWorker:', error);
-            });
+    // coletar despesas
+    const despesas = [];
+    document.querySelectorAll('#tabelaDespesas tbody tr').forEach(row=>{
+      const dInput = row.querySelector('input[type="date"]');
+      const descInput = row.querySelector('input[type="text"]');
+      const valInput = row.querySelector('input[type="number"]');
+      if((dInput && dInput.value) || (descInput && descInput.value) || (valInput && valInput.value)){
+        despesas.push({
+          data: dInput && dInput.value ? dInput.value.split('-').reverse().join('/') : '',
+          descricao: descInput ? descInput.value : '',
+          valor: valInput && valInput.value ? parseFloat(valInput.value).toLocaleString('pt-BR', { minimumFractionDigits:2 }) : '0,00'
         });
       }
     });
-  </script>
+
+    despesas.forEach(d=>{
+      const descLines = pdf.splitTextToSize(d.descricao, 110);
+      const rowH = (descLines.length * 5) + 3;
+      if(y + rowH > 270){ pdf.addPage(); y = 20; }
+      const textY = y + (rowH/2) - 2;
+      pdf.text(d.data, margin, textY);
+      pdf.text(descLines, margin + 30, y);
+      pdf.text(d.valor, pageWidth - margin, textY, {align:'right'});
+      y += rowH;
+    });
+
+    y += 6;
+    pdf.setFont(undefined,'bold'); pdf.text(`Total a Reembolsar: R$ ${total}`, pageWidth - margin, y, {align:'right'}); y+=10;
+
+    // Dados Pix com tipo e chave em negrito
+    pdf.setFont(undefined,'bold'); pdf.text('Dados para transferência via Pix:', margin, y); y += 7;
+    pdf.setFont(undefined,'normal'); pdf.text('Tipo de Chave: ', margin, y);
+    pdf.setFont(undefined,'bold'); pdf.text(tipoPixText, margin + 35, y);
+    pdf.setFont(undefined,'normal'); pdf.text('Chave: ', pageWidth/2, y);
+    pdf.setFont(undefined,'bold'); pdf.text(chavePix, pageWidth/2 + 20, y);
+    y += 18;
+
+    // Assinatura supervisor
+    let assinaturaData = null;
+    try{ assinaturaData = assinaturaSupervisorImagem || (supervisorCanvas ? supervisorCanvas.toDataURL('image/png') : null); } catch(e){ console.warn('Erro assinatura', e); }
+    if(assinaturaData){
+      const sigW = 70, sigX = (pageWidth - sigW)/2;
+      if(y + 60 > 270){ pdf.addPage(); y = 30; }
+      pdf.addImage(assinaturaData,'PNG',sigX,y,sigW,25);
+      pdf.line(sigX, y+26, sigX+sigW, y+26);
+      pdf.setFont(undefined,'bold'); pdf.text(supervisorNome || 'Assinatura do Supervisor', pageWidth/2, y+34, {align:'center'});
+    } else {
+      const sigX = (pageWidth - 70)/2;
+      pdf.line(sigX, y+40, sigX+70, y+40);
+      pdf.setFont(undefined,'bold'); pdf.text(supervisorNome || 'Assinatura do Supervisor', pageWidth/2, y+48, {align:'center'});
+    }
+
+    // Comprovantes: cada um em nova página
+    for(let i=0;i<comprovantes.length;i++){
+      const comp = comprovantes[i];
+      try{
+        pdf.addPage();
+        const inner = 15; pdf.setFontSize(12); pdf.text(`Comprovante ${i+1}`, pageWidth/2, inner, {align:'center'});
+        const props = pdf.getImageProperties(comp.src);
+        const maxW = pdf.internal.pageSize.getWidth() - inner*2;
+        const maxH = pdf.internal.pageSize.getHeight() - inner*2 - 20;
+        const ratio = Math.min(maxW/props.width, maxH/props.height);
+        const w = props.width * ratio; const h = props.height * ratio;
+        const x = (pdf.internal.pageSize.getWidth() - w)/2; const yImg = (pdf.internal.pageSize.getHeight() - h)/2 + 10;
+        pdf.addImage(comp.src,'PNG',x,yImg,w,h);
+      } catch(e){ console.warn('Erro ao adicionar comprovante ao PDF', e); }
+    }
+
+    const fileName = `reembolso_${(nome||'sem_nome').replace(/\s+/g,'_')}.pdf`;
+    pdf.save(fileName);
+
+  } catch(err){
+    console.error('Erro ao gerar PDF', err);
+    alert('Não foi possível gerar o PDF. Verifique o console do navegador para detalhes.');
+  }
+}
+
+/* ===== Limpar formulário ===== */
+function limparFormulario(){
+  if(!confirm('Tem certeza de que deseja limpar todos os campos do formulário?')) return;
+  document.getElementById('nomeSolicitante').value='';
+  document.getElementById('supervisorNome').value='';
+  document.querySelector('#tabelaDespesas tbody').innerHTML='';
+  adicionarLinha();
+  comprovantes = []; renderizarComprovantes();
+  document.getElementById('tipoPix').value='cpf_cnpj'; configurarInputPix();
+  limparAssinaturaSupervisor();
+  window.scrollTo({top:0,behavior:'smooth'});
+  calcularTotal();
+}
+
+/* ===== Inicialização ===== */
+document.addEventListener('DOMContentLoaded', ()=>{
+  // ligar eventos principais
+  document.getElementById('btnAddLinha').addEventListener('click', adicionarLinha);
+  adicionarLinha(); // cria 1 linha inicial
+  setupAssinaturaSupervisor();
+  configurarInputPix();
+  renderizarComprovantes();
+  aplicarRestricaoData();
+
+  // capitalização
+  document.getElementById('nomeSolicitante').addEventListener('blur', function(){ capitalizarNomeProprioInput(this); });
+  document.getElementById('supervisorNome').addEventListener('blur', function(){ capitalizarNomeProprioInput(this); });
+
+  // service worker (se houver)
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('./sw.js').then(reg=>console.log('SW registrado',reg.scope)).catch(err=>console.log('SW falhou',err));
+    });
+  }
+});
+
+/* ===== expor uploadAssinatura para input onchange ===== */
+window.uploadAssinatura = uploadAssinatura;
+</script>
 </body>
 </html>
