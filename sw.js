@@ -1,6 +1,6 @@
 // sw.js — Versão final PWA "Solicitação de Reembolso - Sem Fronteiras"
 
-const CACHE_NAME = "reembolso-sf-v4";
+const CACHE_NAME = "reembolso-sf-v5";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
@@ -66,3 +66,4 @@ self.addEventListener("message", event => {
     self.skipWaiting();
   }
 });
+
