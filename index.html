@@ -68,10 +68,10 @@ th{font-weight:700;border-bottom:2px solid var(--blue)}
   font-weight: 700;
 }
 </style>
-
-<!-- Manifest & PWA Config (colocados **fora** do <style>) -->
+  
+<!-- 🔹 Configurações PWA -->
 <link rel="manifest" href="./manifest.json">
-<meta name="theme-color" content="#1c6ba0">
+<meta name="theme-color" content="#004aad">
 
 <!-- Para Android -->
 <meta name="mobile-web-app-capable" content="yes">
@@ -81,6 +81,15 @@ th{font-weight:700;border-bottom:2px solid var(--blue)}
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Reembolso SF">
 <link rel="apple-touch-icon" href="./icons/icon-512x512.png">
+
+  <!-- Ícones padrão -->
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon-512x512.png">
+
+<!-- Evitar cache agressivo -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 
 </head>
 <body>
@@ -719,53 +728,54 @@ window.uploadAssinatura = uploadAssinatura;
   }
 </script>
 
-<!-- PWA: beforeinstallprompt (aparecerá o botão de instalar) -->
 <script>
-  let deferredPrompt;
-  const existingInstallBtn = document.getElementById('install-btn');
-
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-
-    // mostra botão fixo existente
-    if (existingInstallBtn) {
-      existingInstallBtn.style.display = 'block';
-      existingInstallBtn.setAttribute('aria-hidden','false');
-    } else {
-      // fallback: cria botão se não existir
-      const installBtn = document.createElement('button');
-      installBtn.id = 'install-btn';
-      installBtn.textContent = '📲 Instalar Aplicativo';
-      installBtn.style.cssText = 'position:fixed;bottom:25px;right:20px;background:#004aad;color:#fff;border:none;border-radius:10px;padding:12px 20px;font-size:15px;font-weight:bold;box-shadow:0 3px 6px rgba(0,0,0,0.3);z-index:9999;cursor:pointer;';
-      document.body.appendChild(installBtn);
-      installBtn.addEventListener('click', async () => {
-        installBtn.style.display = 'none';
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        console.log('Instalação:', outcome);
-        deferredPrompt = null;
-      });
-    }
-  });
-
-  // comportamento do botão já existente
-  if (existingInstallBtn) {
-    existingInstallBtn.addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      existingInstallBtn.style.display = 'none';
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log('Instalação:', outcome);
-      deferredPrompt = null;
+  // ✅ Registro do Service Worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('✅ Service Worker registrado:', reg.scope))
+        .catch(err => console.log('❌ Erro ao registrar Service Worker:', err));
     });
   }
 
+  // ✅ Controle do botão "Instalar App"
+  let deferredPrompt;
+  const installBtn = document.createElement('button');
+  installBtn.id = 'install-btn';
+  installBtn.textContent = 'Instalar App';
+  Object.assign(installBtn.style, {
+    position: 'fixed',
+    bottom: '20px',
+    right: '20px',
+    padding: '10px 16px',
+    background: '#004aad',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    display: 'none',
+    zIndex: '1000'
+  });
+  document.body.appendChild(installBtn);
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.style.display = 'block';
+  });
+
+  installBtn.addEventListener('click', async () => {
+    installBtn.style.display = 'none';
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`🟢 Resultado da instalação: ${outcome}`);
+    deferredPrompt = null;
+  });
+
   window.addEventListener('appinstalled', () => {
-    console.log('✅ Aplicativo instalado!');
-    const b = document.getElementById('install-btn');
-    if(b) b.style.display = 'none';
+    console.log('📱 Aplicativo instalado!');
   });
 </script>
 </body>
 </html>
+
