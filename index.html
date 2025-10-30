@@ -50,6 +50,18 @@ th{font-weight:700;border-bottom:2px solid var(--blue)}
   #print-only-content{display:block}
   input,textarea,select{border:none!important;background:transparent!important;box-shadow:none!important}
 }
+  <!-- Manifest & PWA Config -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#1c6ba0">
+
+<!-- Para Android -->
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- Para iOS (Safari) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Reembolso SF">
+<link rel="apple-touch-icon" href="https://i.imgur.com/dvzRyus.png">
 </style>
 </head>
 <body>
@@ -639,4 +651,5 @@ document.addEventListener('DOMContentLoaded', ()=>{
 window.uploadAssinatura = uploadAssinatura;
 </script>
 </body>
+
 </html>
