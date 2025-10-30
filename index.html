@@ -80,7 +80,7 @@ th{font-weight:700;border-bottom:2px solid var(--blue)}
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Reembolso SF">
-<link rel="apple-touch-icon" href="https://i.imgur.com/dvzRyus.png">
+<link rel="apple-touch-icon" href="./icons/icon-512x512.png">
 
 </head>
 <body>
@@ -661,67 +661,30 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('nomeSolicitante').addEventListener('blur', function(){ capitalizarNomeProprioInput(this); });
   document.getElementById('supervisorNome').addEventListener('blur', function(){ capitalizarNomeProprioInput(this); });
 
-  // service worker (se houver) - já existente (mantive)
-  if('serviceWorker' in navigator){
-    window.addEventListener('load', ()=>{
-      navigator.serviceWorker.register('./sw.js').then(reg=>console.log('SW registrado',reg.scope)).catch(err=>console.log('SW falhou',err));
-    });
-  }
-
-  /* ==== PWA: beforeinstallprompt (mostrar botão "Instalar App") ==== */
-  const installBtn = document.getElementById('install-btn');
-  let deferredPrompt = null;
-
-  window.addEventListener('beforeinstallprompt', (e) => {
-    // previne o prompt automático
-    e.preventDefault();
-    deferredPrompt = e;
-    // mostra o botão
-    installBtn.style.display = 'block';
-    installBtn.setAttribute('aria-hidden','false');
-  });
-
-  installBtn.addEventListener('click', async () => {
-    if(!deferredPrompt) return;
-    installBtn.style.display = 'none';
-    try {
-      deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      console.log('Resultado da instalação:', choice.outcome);
-    } catch (err) {
-      console.error('Erro ao prompt de instalação', err);
-    } finally {
-      deferredPrompt = null;
-    }
-  });
-
-  window.addEventListener('appinstalled', () => {
-    console.log('App instalado (evento appinstalled)');
-    // esconder botão caso ainda esteja visível
-    const b = document.getElementById('install-btn');
-    if(b) b.style.display = 'none';
-  });
-
+  // service worker (se houver) - mantive registro único e otimizado mais abaixo
 });
 
 /* ===== expor uploadAssinatura para input onchange ===== */
 window.uploadAssinatura = uploadAssinatura;
 </script>
-  <script>
-  // Registro do Service Worker otimizado
+
+<!-- Registro do Service Worker + atualização (único, consolidado) -->
+<script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').then(registration => {
-        console.log('✅ SW registrado:', registration.scope);
+      navigator.serviceWorker.register('./sw.js')
+        .then(registration => {
+          console.log('✅ SW registrado:', registration.scope);
 
-        // Detecta nova versão
-        registration.onupdatefound = () => {
-          const newWorker = registration.installing;
-          newWorker.onstatechange = () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              const banner = document.createElement('div');
-              banner.innerHTML = `
-                <div style="
+          // detectar atualização e mostrar banner para o usuário atualizar
+          registration.onupdatefound = () => {
+            const newWorker = registration.installing;
+            newWorker.onstatechange = () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // cria banner de atualização
+                const banner = document.createElement('div');
+                banner.id = 'sw-update-banner';
+                banner.style.cssText = `
                   position:fixed;
                   bottom:20px;
                   left:50%;
@@ -734,60 +697,74 @@ window.uploadAssinatura = uploadAssinatura;
                   box-shadow:0 3px 6px rgba(0,0,0,0.3);
                   z-index:10000;
                   text-align:center;
-                ">
-                  Nova versão disponível — <button id="reload" style="background:white;color:#004aad;border:none;padding:6px 10px;border-radius:6px;font-weight:bold;cursor:pointer;">Atualizar</button>
-                </div>`;
-              document.body.appendChild(banner);
+                `;
+                banner.innerHTML = 'Nova versão disponível — <button id="sw-reload" style="background:white;color:#004aad;border:none;padding:6px 10px;border-radius:6px;font-weight:bold;cursor:pointer;margin-left:8px;">Atualizar</button>';
+                document.body.appendChild(banner);
 
-              document.getElementById('reload').addEventListener('click', () => {
-                newWorker.postMessage({ type: 'SKIP_WAITING' });
-                window.location.reload();
-              });
-            }
+                document.getElementById('sw-reload').addEventListener('click', () => {
+                  newWorker.postMessage({ type: 'SKIP_WAITING' });
+                  // reload após novo SW assumir controle
+                  newWorker.addEventListener('statechange', (e) => {
+                    if (e.target.state === 'activated') {
+                      window.location.reload();
+                    }
+                  });
+                });
+              }
+            };
           };
-        };
-      }).catch(err => console.error('❌ Erro ao registrar SW:', err));
+        })
+        .catch(err => console.error('❌ Erro ao registrar SW:', err));
     });
   }
 </script>
-  <!-- PWA - Botão de instalação manual -->
+
+<!-- PWA: beforeinstallprompt (aparecerá o botão de instalar) -->
 <script>
   let deferredPrompt;
+  const existingInstallBtn = document.getElementById('install-btn');
 
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
 
-    // Cria botão visível
-    const installBtn = document.createElement('button');
-    installBtn.textContent = '📲 Instalar Aplicativo';
-    installBtn.style.cssText = `
-      position: fixed;
-      bottom: 25px;
-      right: 20px;
-      background-color: #004aad;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 12px 20px;
-      font-size: 15px;
-      font-weight: bold;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-      z-index: 9999;
-    `;
-    document.body.appendChild(installBtn);
+    // mostra botão fixo existente
+    if (existingInstallBtn) {
+      existingInstallBtn.style.display = 'block';
+      existingInstallBtn.setAttribute('aria-hidden','false');
+    } else {
+      // fallback: cria botão se não existir
+      const installBtn = document.createElement('button');
+      installBtn.id = 'install-btn';
+      installBtn.textContent = '📲 Instalar Aplicativo';
+      installBtn.style.cssText = 'position:fixed;bottom:25px;right:20px;background:#004aad;color:#fff;border:none;border-radius:10px;padding:12px 20px;font-size:15px;font-weight:bold;box-shadow:0 3px 6px rgba(0,0,0,0.3);z-index:9999;cursor:pointer;';
+      document.body.appendChild(installBtn);
+      installBtn.addEventListener('click', async () => {
+        installBtn.style.display = 'none';
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('Instalação:', outcome);
+        deferredPrompt = null;
+      });
+    }
+  });
 
-    installBtn.addEventListener('click', async () => {
-      installBtn.style.display = 'none';
+  // comportamento do botão já existente
+  if (existingInstallBtn) {
+    existingInstallBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      existingInstallBtn.style.display = 'none';
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       console.log('Instalação:', outcome);
       deferredPrompt = null;
     });
-  });
+  }
 
   window.addEventListener('appinstalled', () => {
     console.log('✅ Aplicativo instalado!');
+    const b = document.getElementById('install-btn');
+    if(b) b.style.display = 'none';
   });
 </script>
 </body>
