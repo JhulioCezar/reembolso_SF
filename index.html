@@ -70,7 +70,7 @@ th{font-weight:700;border-bottom:2px solid var(--blue)}
 </style>
   
 <!-- 🔹 Configurações PWA -->
-<link rel="manifest" href="./manifest.json">
+<link rel="manifest" href="/reembolso_SF/manifest.json">
 <meta name="theme-color" content="#004aad">
 
 <!-- Para Android -->
@@ -80,11 +80,11 @@ th{font-weight:700;border-bottom:2px solid var(--blue)}
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Reembolso SF">
-<link rel="apple-touch-icon" href="./icons/icon-512x512.png">
+<link rel="apple-touch-icon" href="/reembolso_SF/icon-512x512.png">
 
   <!-- Ícones padrão -->
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192x192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="./icon-512x512.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/reembolso_SF/icon-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/reembolso_SF/icon-512x512.png">
 
 <!-- Evitar cache agressivo -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -670,112 +670,43 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('nomeSolicitante').addEventListener('blur', function(){ capitalizarNomeProprioInput(this); });
   document.getElementById('supervisorNome').addEventListener('blur', function(){ capitalizarNomeProprioInput(this); });
 
-  // service worker (se houver) - mantive registro único e otimizado mais abaixo
+  // Service Worker com fallback para GitHub Pages
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/reembolso_SF/sw.js')
+      .then(registration => {
+        console.log('✅ SW registrado no GitHub Pages:', registration.scope);
+      })
+      .catch(error => {
+        console.log('⚠️ SW não registrado (pode ser normal no GitHub Pages):', error);
+      });
+  }
 });
 
 /* ===== expor uploadAssinatura para input onchange ===== */
 window.uploadAssinatura = uploadAssinatura;
-</script>
 
-<!-- Registro do Service Worker + atualização (único, consolidado) -->
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(registration => {
-          console.log('✅ SW registrado:', registration.scope);
+// ✅ Controle do botão "Instalar App"
+let deferredPrompt;
+const installBtn = document.getElementById('install-btn');
 
-          // detectar atualização e mostrar banner para o usuário atualizar
-          registration.onupdatefound = () => {
-            const newWorker = registration.installing;
-            newWorker.onstatechange = () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // cria banner de atualização
-                const banner = document.createElement('div');
-                banner.id = 'sw-update-banner';
-                banner.style.cssText = `
-                  position:fixed;
-                  bottom:20px;
-                  left:50%;
-                  transform:translateX(-50%);
-                  background:#004aad;
-                  color:white;
-                  padding:12px 20px;
-                  border-radius:8px;
-                  font-weight:bold;
-                  box-shadow:0 3px 6px rgba(0,0,0,0.3);
-                  z-index:10000;
-                  text-align:center;
-                `;
-                banner.innerHTML = 'Nova versão disponível — <button id="sw-reload" style="background:white;color:#004aad;border:none;padding:6px 10px;border-radius:6px;font-weight:bold;cursor:pointer;margin-left:8px;">Atualizar</button>';
-                document.body.appendChild(banner);
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.style.display = 'block';
+});
 
-                document.getElementById('sw-reload').addEventListener('click', () => {
-                  newWorker.postMessage({ type: 'SKIP_WAITING' });
-                  // reload após novo SW assumir controle
-                  newWorker.addEventListener('statechange', (e) => {
-                    if (e.target.state === 'activated') {
-                      window.location.reload();
-                    }
-                  });
-                });
-              }
-            };
-          };
-        })
-        .catch(err => console.error('❌ Erro ao registrar SW:', err));
-    });
-  }
-</script>
+installBtn.addEventListener('click', async () => {
+  installBtn.style.display = 'none';
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  console.log(`🟢 Resultado da instalação: ${outcome}`);
+  deferredPrompt = null;
+});
 
-<script>
-  // ✅ Registro do Service Worker
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('✅ Service Worker registrado:', reg.scope))
-        .catch(err => console.log('❌ Erro ao registrar Service Worker:', err));
-    });
-  }
-
-  // ✅ Controle do botão "Instalar App"
-  let deferredPrompt;
-  const installBtn = document.createElement('button');
-  installBtn.id = 'install-btn';
-  installBtn.textContent = 'Instalar App';
-  Object.assign(installBtn.style, {
-    position: 'fixed',
-    bottom: '20px',
-    right: '20px',
-    padding: '10px 16px',
-    background: '#004aad',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '12px',
-    cursor: 'pointer',
-    display: 'none',
-    zIndex: '1000'
-  });
-  document.body.appendChild(installBtn);
-
-  window.addEventListener('beforeinstallprompt', e => {
-    e.preventDefault();
-    deferredPrompt = e;
-    installBtn.style.display = 'block';
-  });
-
-  installBtn.addEventListener('click', async () => {
-    installBtn.style.display = 'none';
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    console.log(`🟢 Resultado da instalação: ${outcome}`);
-    deferredPrompt = null;
-  });
-
-  window.addEventListener('appinstalled', () => {
-    console.log('📱 Aplicativo instalado!');
-  });
+window.addEventListener('appinstalled', () => {
+  console.log('📱 Aplicativo instalado!');
+  installBtn.style.display = 'none';
+});
 </script>
 </body>
 </html>
-
