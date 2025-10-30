@@ -707,5 +707,49 @@ document.addEventListener('DOMContentLoaded', ()=>{
 /* ===== expor uploadAssinatura para input onchange ===== */
 window.uploadAssinatura = uploadAssinatura;
 </script>
+  <script>
+  // Registro do Service Worker otimizado
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').then(registration => {
+        console.log('✅ SW registrado:', registration.scope);
+
+        // Detecta nova versão
+        registration.onupdatefound = () => {
+          const newWorker = registration.installing;
+          newWorker.onstatechange = () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              const banner = document.createElement('div');
+              banner.innerHTML = `
+                <div style="
+                  position:fixed;
+                  bottom:20px;
+                  left:50%;
+                  transform:translateX(-50%);
+                  background:#004aad;
+                  color:white;
+                  padding:12px 20px;
+                  border-radius:8px;
+                  font-weight:bold;
+                  box-shadow:0 3px 6px rgba(0,0,0,0.3);
+                  z-index:10000;
+                  text-align:center;
+                ">
+                  Nova versão disponível — <button id="reload" style="background:white;color:#004aad;border:none;padding:6px 10px;border-radius:6px;font-weight:bold;cursor:pointer;">Atualizar</button>
+                </div>`;
+              document.body.appendChild(banner);
+
+              document.getElementById('reload').addEventListener('click', () => {
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                window.location.reload();
+              });
+            }
+          };
+        };
+      }).catch(err => console.error('❌ Erro ao registrar SW:', err));
+    });
+  }
+</script>
 </body>
 </html>
+
