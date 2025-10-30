@@ -1,7 +1,9 @@
 {
+  "id": "reembolso-sf",
   "name": "Solicitação de Reembolso - Sem Fronteiras",
   "short_name": "Reembolso SF",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#004aad",
