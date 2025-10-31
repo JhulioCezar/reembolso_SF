@@ -2,8 +2,27 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
 <title>Solicitação de Reembolso - Sem Fronteiras</title>
+
+<link rel="icon" type="image/png" href="icon-192x192.png">
+  
+<!-- 🔹 Configurações PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#007bff">
+
+<!-- Para Android -->
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- Para iOS (Safari) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Reembolso SF">
+<link rel="apple-touch-icon" href="icon-512x512.png">
+
+  <!-- Ícones padrão -->
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512x512.png">
 
 <!-- libs para gerar PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -68,23 +87,6 @@ th{font-weight:700;border-bottom:2px solid var(--blue)}
   font-weight: 700;
 }
 </style>
-  
-<!-- 🔹 Configurações PWA -->
-<link rel="manifest" href="/reembolso_SF/manifest.json">
-<meta name="theme-color" content="#004aad">
-
-<!-- Para Android -->
-<meta name="mobile-web-app-capable" content="yes">
-
-<!-- Para iOS (Safari) -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Reembolso SF">
-<link rel="apple-touch-icon" href="/reembolso_SF/icon-512x512.png">
-
-  <!-- Ícones padrão -->
-<link rel="icon" type="image/png" sizes="192x192" href="/reembolso_SF/icon-192x192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="/reembolso_SF/icon-512x512.png">
 
 <!-- Evitar cache agressivo -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -710,3 +712,4 @@ window.addEventListener('appinstalled', () => {
 </script>
 </body>
 </html>
+
