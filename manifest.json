@@ -1,24 +1,21 @@
 {
   "name": "Solicitação de Reembolso - Sem Fronteiras",
   "short_name": "Reembolso SF",
-  "start_url": "/reembolso_SF/",
-  "scope": "/reembolso_SF/",
+  "start_url": "index.html",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#ffffff",
-  "theme_color": "#004aad",
+  "theme_color": "#007bff",
+  "description": "Formulário de Reembolso",
   "icons": [
     {
-      "src": "/reembolso_SF/icon-192x192.png",
+      "src": "icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
     },
     {
-      "src": "/reembolso_SF/icon-512x512.png",
+      "src": "icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
     }
   ]
 }
