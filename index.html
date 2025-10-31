@@ -86,6 +86,33 @@ th{font-weight:700;border-bottom:2px solid var(--blue)}
   cursor: pointer;
   font-weight: 700;
 }
+  /* banner de atualização */
+#sw-update-banner {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #004aad;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+  z-index: 10000;
+  text-align: center;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
 </style>
 
 <!-- Evitar cache agressivo -->
@@ -704,16 +731,54 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('nomeSolicitante').addEventListener('blur', function(){ capitalizarNomeProprioInput(this); });
   document.getElementById('supervisorNome').addEventListener('blur', function(){ capitalizarNomeProprioInput(this); });
 
-  // Service Worker com fallback para GitHub Pages
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/reembolso_SF/sw.js')
-      .then(registration => {
-        console.log('✅ SW registrado no GitHub Pages:', registration.scope);
-      })
-      .catch(error => {
-        console.log('⚠️ SW não registrado (pode ser normal no GitHub Pages):', error);
-      });
-  }
+  // Service Worker com sistema de atualização
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js')
+    .then(registration => {
+      console.log('✅ SW registrado:', registration.scope);
+
+      // 🔥 SISTEMA DE ATUALIZAÇÃO - MOSTRAR BANNER
+      registration.onupdatefound = () => {
+        const newWorker = registration.installing;
+        newWorker.onstatechange = () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // Cria banner de atualização
+            const banner = document.createElement('div');
+            banner.id = 'sw-update-banner';
+            banner.style.cssText = `
+              position: fixed;
+              bottom: 20px;
+              left: 50%;
+              transform: translateX(-50%);
+              background: #004aad;
+              color: white;
+              padding: 12px 20px;
+              border-radius: 8px;
+              font-weight: bold;
+              box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+              z-index: 10000;
+              text-align: center;
+            `;
+            banner.innerHTML = 'Nova versão disponível — <button id="sw-reload" style="background:white;color:#004aad;border:none;padding:6px 10px;border-radius:6px;font-weight:bold;cursor:pointer;margin-left:8px;">Atualizar</button>';
+            document.body.appendChild(banner);
+
+            document.getElementById('sw-reload').addEventListener('click', () => {
+              newWorker.postMessage({ type: 'SKIP_WAITING' });
+              // Reload após novo SW assumir controle
+              newWorker.addEventListener('statechange', (e) => {
+                if (e.target.state === 'activated') {
+                  window.location.reload();
+                }
+              });
+            });
+          }
+        };
+      };
+    })
+    .catch(error => {
+      console.log('⚠️ Erro ao registrar SW:', error);
+    });
+}
 });
 
 /* ===== expor uploadAssinatura para input onchange ===== */
@@ -744,6 +809,3 @@ window.addEventListener('appinstalled', () => {
 </script>
 </body>
 </html>
-
-
-
