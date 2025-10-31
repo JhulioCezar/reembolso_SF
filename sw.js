@@ -4,8 +4,8 @@ const FILES_TO_CACHE = [
   "/reembolso_SF/",
   "/reembolso_SF/index.html",
   "/reembolso_SF/manifest.json",
-  "/reembolso_SF/icon-192x192.png",
-  "/reembolso_SF/icon-512x512.png",
+  "/reembolso_SF/android-icon-192x192.png",
+  "/reembolso_SF/android-icon-512x512.png",
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
   "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
   "https://i.imgur.com/dvzRyus.png"
