@@ -9,7 +9,7 @@
   
 <!-- 🔹 Configurações PWA -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#007bff">
+<meta name="theme-color" content="#1c6ba0">
 
 <!-- Para Android -->
 <meta name="mobile-web-app-capable" content="yes">
@@ -222,10 +222,11 @@ function aplicarRestricaoData() {
   });
 }
 
-/* ===== Setup canvas do supervisor (retina-aware) ===== */
+/* ===== Setup canvas do supervisor (retina-aware) - VERSÃO CORRIGIDA ===== */
 function setupAssinaturaSupervisor(){
   supervisorCanvas = document.getElementById('supervisor-signature');
   if(!supervisorCanvas) return;
+  
   function ajustar(){
     const ratio = window.devicePixelRatio || 1;
     const style = getComputedStyle(supervisorCanvas);
@@ -240,6 +241,15 @@ function setupAssinaturaSupervisor(){
     supervisorCtx.lineWidth = 2;
     supervisorCtx.lineCap = 'round';
     supervisorCtx.strokeStyle = '#000';
+    
+    // 🔥 CORREÇÃO: Restaurar assinatura se existir
+    if(assinaturaSupervisorImagem) {
+      const img = new Image();
+      img.onload = () => {
+        supervisorCtx.drawImage(img, 0, 0, w, h);
+      };
+      img.src = assinaturaSupervisorImagem;
+    }
   }
   ajustar();
   window.addEventListener('resize', ajustar);
@@ -254,32 +264,54 @@ function setupAssinaturaSupervisor(){
     }
   }
 
-  supervisorCanvas.addEventListener('mousedown', e=>{
-    assinaturaSupervisorImagem = null;
-    supervisorDrawing = true;
+  // 🔥 CORREÇÃO: Prevenir perda de foco limpar a assinatura
+  let isDrawing = false;
+  let lastX = 0;
+  let lastY = 0;
+
+  function startDrawing(e) {
+    isDrawing = true;
+    assinaturaSupervisorImagem = null; // Só limpa quando começa nova assinatura
     const p = getPos(e);
-    supervisorCtx.beginPath(); supervisorCtx.moveTo(p.x,p.y);
-  });
-  document.addEventListener('mousemove', e=>{
-    if(!supervisorDrawing) return;
+    [lastX, lastY] = [p.x, p.y];
+    supervisorCtx.beginPath();
+    supervisorCtx.moveTo(lastX, lastY);
+  }
+
+  function draw(e) {
+    if (!isDrawing) return;
     const p = getPos(e);
-    supervisorCtx.lineTo(p.x,p.y);
+    supervisorCtx.lineTo(p.x, p.y);
     supervisorCtx.stroke();
-  });
-  document.addEventListener('mouseup', ()=> supervisorDrawing=false);
+    [lastX, lastY] = [p.x, p.y];
+  }
 
-  supervisorCanvas.addEventListener('touchstart', e=>{
-    e.preventDefault(); assinaturaSupervisorImagem = null; supervisorDrawing = true;
-    const p = getPos(e);
-    supervisorCtx.beginPath(); supervisorCtx.moveTo(p.x,p.y);
-  }, {passive:false});
-  supervisorCanvas.addEventListener('touchmove', e=>{
-    e.preventDefault(); if(!supervisorDrawing) return;
-    const p = getPos(e); supervisorCtx.lineTo(p.x,p.y); supervisorCtx.stroke();
-  }, {passive:false});
-  supervisorCanvas.addEventListener('touchend', ()=> supervisorDrawing=false);
+  function stopDrawing() {
+    isDrawing = false;
+    // 🔥 CORREÇÃO: Salvar assinatura automaticamente
+    if (supervisorCanvas) {
+      assinaturaSupervisorImagem = supervisorCanvas.toDataURL('image/png');
+    }
+  }
+
+  // Event listeners corrigidos
+  supervisorCanvas.addEventListener('mousedown', startDrawing);
+  supervisorCanvas.addEventListener('mousemove', draw);
+  supervisorCanvas.addEventListener('mouseup', stopDrawing);
+  supervisorCanvas.addEventListener('mouseout', stopDrawing);
+
+  supervisorCanvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    startDrawing(e);
+  }, {passive: false});
+  
+  supervisorCanvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    draw(e);
+  }, {passive: false});
+  
+  supervisorCanvas.addEventListener('touchend', stopDrawing);
 }
-
 /* ===== Limpar e upload assinatura (substitui desenho) ===== */
 function limparAssinaturaSupervisor(){
   if(!supervisorCtx||!supervisorCanvas) return;
@@ -712,5 +744,6 @@ window.addEventListener('appinstalled', () => {
 </script>
 </body>
 </html>
+
 
 
