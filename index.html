@@ -1,28 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Solicitação de Reembolso - Sem Fronteiras</title>
-
-<link rel="icon" type="image/png" href="android-icon-192x192.png">
-  
-<!-- 🔹 Configurações PWA -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1c6ba0">
-
-<!-- Para Android -->
-<meta name="mobile-web-app-capable" content="yes">
-
-<!-- Para iOS (Safari) -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Reembolso SF">
-<link rel="apple-touch-icon" href="android-icon-512x512.png">
-
-  <!-- Ícones padrão -->
-<link rel="icon" type="image/png" sizes="192x192" href="android-icon-192x192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="android-icon-512x512.png">
 
 <!-- libs para gerar PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -86,7 +67,8 @@ th{font-weight:700;border-bottom:2px solid var(--blue)}
   cursor: pointer;
   font-weight: 700;
 }
-  /* banner de atualização */
+
+/* banner de atualização */
 #sw-update-banner {
   position: fixed;
   bottom: 20px;
@@ -100,20 +82,25 @@ th{font-weight:700;border-bottom:2px solid var(--blue)}
   box-shadow: 0 3px 6px rgba(0,0,0,0.3);
   z-index: 10000;
   text-align: center;
-  animation: slideUp 0.3s ease-out;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
 }
 </style>
+  
+<!-- 🔹 Configurações PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#004aad">
+
+<!-- Para Android -->
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- Para iOS (Safari) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Reembolso SF">
+<link rel="apple-touch-icon" href="icon-512x512.png">
+
+<!-- Ícones padrão -->
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512x512.png">
 
 <!-- Evitar cache agressivo -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -123,7 +110,7 @@ th{font-weight:700;border-bottom:2px solid var(--blue)}
 </head>
 <body>
   <div class="container">
-    <div class="header"><img src="https://i.imgur.com/SEr4lkm.png" alt="Sem Fronteiras Logo"></div>
+    <div class="header"><img src="https://i.imgur.com/dvzRyus.png" alt="Sem Fronteiras Logo"></div>
     <div class="titulo">Solicitação de Reembolso</div>
 
     <label for="nomeSolicitante">Nome do solicitante:</label>
@@ -165,7 +152,7 @@ th{font-weight:700;border-bottom:2px solid var(--blue)}
 
     <div class="comprovante-container">
       <div class="comprovante-actions">
-        <strong>Comprovantes:</strong>
+        <strong>Comprovantes (opcional):</strong>
         <button class="anexo-btn" onclick="inserirComprovante()">Inserir Comprovante(s)</button>
       </div>
       <div id="lista-comprovantes"></div>
@@ -196,7 +183,7 @@ th{font-weight:700;border-bottom:2px solid var(--blue)}
 
   <div id="comprovante-modal-overlay" class="modal-overlay" onclick="fecharModalComprovante()"></div>
   <div id="comprovante-modal" class="modal" role="dialog" aria-modal="true">
-    <p>Adicionar comprovante</p>
+    <p>Adicionar comprovante (opcional)</p>
     <button type="button" onclick="escolherOpcaoComprovante('camera')">📷 Abrir Câmera</button>
     <button type="button" onclick="escolherOpcaoComprovante('arquivo')">📁 Procurar Arquivos</button>
     <button type="button" class="btn-danger" onclick="fecharModalComprovante()">Cancelar</button>
@@ -249,11 +236,10 @@ function aplicarRestricaoData() {
   });
 }
 
-/* ===== Setup canvas do supervisor (retina-aware) - VERSÃO CORRIGIDA ===== */
+/* ===== Setup canvas do supervisor (retina-aware) ===== */
 function setupAssinaturaSupervisor(){
   supervisorCanvas = document.getElementById('supervisor-signature');
   if(!supervisorCanvas) return;
-  
   function ajustar(){
     const ratio = window.devicePixelRatio || 1;
     const style = getComputedStyle(supervisorCanvas);
@@ -268,15 +254,6 @@ function setupAssinaturaSupervisor(){
     supervisorCtx.lineWidth = 2;
     supervisorCtx.lineCap = 'round';
     supervisorCtx.strokeStyle = '#000';
-    
-    // 🔥 CORREÇÃO: Restaurar assinatura se existir
-    if(assinaturaSupervisorImagem) {
-      const img = new Image();
-      img.onload = () => {
-        supervisorCtx.drawImage(img, 0, 0, w, h);
-      };
-      img.src = assinaturaSupervisorImagem;
-    }
   }
   ajustar();
   window.addEventListener('resize', ajustar);
@@ -291,54 +268,32 @@ function setupAssinaturaSupervisor(){
     }
   }
 
-  // 🔥 CORREÇÃO: Prevenir perda de foco limpar a assinatura
-  let isDrawing = false;
-  let lastX = 0;
-  let lastY = 0;
-
-  function startDrawing(e) {
-    isDrawing = true;
-    assinaturaSupervisorImagem = null; // Só limpa quando começa nova assinatura
+  supervisorCanvas.addEventListener('mousedown', e=>{
+    assinaturaSupervisorImagem = null;
+    supervisorDrawing = true;
     const p = getPos(e);
-    [lastX, lastY] = [p.x, p.y];
-    supervisorCtx.beginPath();
-    supervisorCtx.moveTo(lastX, lastY);
-  }
-
-  function draw(e) {
-    if (!isDrawing) return;
+    supervisorCtx.beginPath(); supervisorCtx.moveTo(p.x,p.y);
+  });
+  document.addEventListener('mousemove', e=>{
+    if(!supervisorDrawing) return;
     const p = getPos(e);
-    supervisorCtx.lineTo(p.x, p.y);
+    supervisorCtx.lineTo(p.x,p.y);
     supervisorCtx.stroke();
-    [lastX, lastY] = [p.x, p.y];
-  }
+  });
+  document.addEventListener('mouseup', ()=> supervisorDrawing=false);
 
-  function stopDrawing() {
-    isDrawing = false;
-    // 🔥 CORREÇÃO: Salvar assinatura automaticamente
-    if (supervisorCanvas) {
-      assinaturaSupervisorImagem = supervisorCanvas.toDataURL('image/png');
-    }
-  }
-
-  // Event listeners corrigidos
-  supervisorCanvas.addEventListener('mousedown', startDrawing);
-  supervisorCanvas.addEventListener('mousemove', draw);
-  supervisorCanvas.addEventListener('mouseup', stopDrawing);
-  supervisorCanvas.addEventListener('mouseout', stopDrawing);
-
-  supervisorCanvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    startDrawing(e);
-  }, {passive: false});
-  
-  supervisorCanvas.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    draw(e);
-  }, {passive: false});
-  
-  supervisorCanvas.addEventListener('touchend', stopDrawing);
+  supervisorCanvas.addEventListener('touchstart', e=>{
+    e.preventDefault(); assinaturaSupervisorImagem = null; supervisorDrawing = true;
+    const p = getPos(e);
+    supervisorCtx.beginPath(); supervisorCtx.moveTo(p.x,p.y);
+  }, {passive:false});
+  supervisorCanvas.addEventListener('touchmove', e=>{
+    e.preventDefault(); if(!supervisorDrawing) return;
+    const p = getPos(e); supervisorCtx.lineTo(p.x,p.y); supervisorCtx.stroke();
+  }, {passive:false});
+  supervisorCanvas.addEventListener('touchend', ()=> supervisorDrawing=false);
 }
+
 /* ===== Limpar e upload assinatura (substitui desenho) ===== */
 function limparAssinaturaSupervisor(){
   if(!supervisorCtx||!supervisorCanvas) return;
@@ -504,7 +459,7 @@ function validarChavePixFormato(tipo, chave){
   return chave.length > 0;
 }
 
-/* ===== Validar formulário (antes de gerar PDF) ===== */
+/* ===== Validar formulário (antes de gerar PDF) - REMOVIDA VALIDAÇÃO DE COMPROVANTE OBRIGATÓRIO ===== */
 function validarFormulario(){
   const faltando = [];
 
@@ -554,8 +509,9 @@ function validarFormulario(){
     }
   });
   if(!temDespesa) faltando.push("Ao menos uma despesa preenchida");
-  // comprovantes
-  if(comprovantes.length === 0) faltando.push("Pelo menos um comprovante anexado");
+  
+  // REMOVIDO: Validação de comprovante obrigatório
+  // if(comprovantes.length === 0) faltando.push("Pelo menos um comprovante anexado");
 
   if(faltando.length > 0){
     alert("⚠️ Antes de gerar o PDF, corrija os seguintes pontos:\n\n• " + faltando.join("\n• "));
@@ -678,20 +634,22 @@ async function gerarPDF(){
       pdf.setFont(undefined,'bold'); pdf.text(supervisorNome || 'Assinatura do Supervisor', pageWidth/2, y+48, {align:'center'});
     }
 
-    // Comprovantes: cada um em nova página
-    for(let i=0;i<comprovantes.length;i++){
-      const comp = comprovantes[i];
-      try{
-        pdf.addPage();
-        const inner = 15; pdf.setFontSize(12); pdf.text(`Comprovante ${i+1}`, pageWidth/2, inner, {align:'center'});
-        const props = pdf.getImageProperties(comp.src);
-        const maxW = pdf.internal.pageSize.getWidth() - inner*2;
-        const maxH = pdf.internal.pageSize.getHeight() - inner*2 - 20;
-        const ratio = Math.min(maxW/props.width, maxH/props.height);
-        const w = props.width * ratio; const h = props.height * ratio;
-        const x = (pdf.internal.pageSize.getWidth() - w)/2; const yImg = (pdf.internal.pageSize.getHeight() - h)/2 + 10;
-        pdf.addImage(comp.src,'PNG',x,yImg,w,h);
-      } catch(e){ console.warn('Erro ao adicionar comprovante ao PDF', e); }
+    // Comprovantes: cada um em nova página (se houver)
+    if(comprovantes.length > 0){
+      for(let i=0;i<comprovantes.length;i++){
+        const comp = comprovantes[i];
+        try{
+          pdf.addPage();
+          const inner = 15; pdf.setFontSize(12); pdf.text(`Comprovante ${i+1}`, pageWidth/2, inner, {align:'center'});
+          const props = pdf.getImageProperties(comp.src);
+          const maxW = pdf.internal.pageSize.getWidth() - inner*2;
+          const maxH = pdf.internal.pageSize.getHeight() - inner*2 - 20;
+          const ratio = Math.min(maxW/props.width, maxH/props.height);
+          const w = props.width * ratio; const h = props.height * ratio;
+          const x = (pdf.internal.pageSize.getWidth() - w)/2; const yImg = (pdf.internal.pageSize.getHeight() - h)/2 + 10;
+          pdf.addImage(comp.src,'PNG',x,yImg,w,h);
+        } catch(e){ console.warn('Erro ao adicionar comprovante ao PDF', e); }
+      }
     }
 
     const fileName = `reembolso_${(nome||'sem_nome').replace(/\s+/g,'_')}.pdf`;
@@ -731,54 +689,52 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('nomeSolicitante').addEventListener('blur', function(){ capitalizarNomeProprioInput(this); });
   document.getElementById('supervisorNome').addEventListener('blur', function(){ capitalizarNomeProprioInput(this); });
 
-  // Service Worker com sistema de atualização
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js')
-    .then(registration => {
-      console.log('✅ SW registrado:', registration.scope);
+  // Service Worker com atualizações
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+      .then(registration => {
+        console.log('✅ SW registrado:', registration.scope);
 
-      // 🔥 SISTEMA DE ATUALIZAÇÃO - MOSTRAR BANNER
-      registration.onupdatefound = () => {
-        const newWorker = registration.installing;
-        newWorker.onstatechange = () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            // Cria banner de atualização
-            const banner = document.createElement('div');
-            banner.id = 'sw-update-banner';
-            banner.style.cssText = `
-              position: fixed;
-              bottom: 20px;
-              left: 50%;
-              transform: translateX(-50%);
-              background: #004aad;
-              color: white;
-              padding: 12px 20px;
-              border-radius: 8px;
-              font-weight: bold;
-              box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-              z-index: 10000;
-              text-align: center;
-            `;
-            banner.innerHTML = 'Nova versão disponível — <button id="sw-reload" style="background:white;color:#004aad;border:none;padding:6px 10px;border-radius:6px;font-weight:bold;cursor:pointer;margin-left:8px;">Atualizar</button>';
-            document.body.appendChild(banner);
+        // detectar atualização e mostrar banner para o usuário atualizar
+        registration.onupdatefound = () => {
+          const newWorker = registration.installing;
+          newWorker.onstatechange = () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // cria banner de atualização
+              const banner = document.createElement('div');
+              banner.id = 'sw-update-banner';
+              banner.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #004aad;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-weight: bold;
+                box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+                z-index: 10000;
+                text-align: center;
+              `;
+              banner.innerHTML = 'Nova versão disponível — <button id="sw-reload" style="background:white;color:#004aad;border:none;padding:6px 10px;border-radius:6px;font-weight:bold;cursor:pointer;margin-left:8px;">Atualizar</button>';
+              document.body.appendChild(banner);
 
-            document.getElementById('sw-reload').addEventListener('click', () => {
-              newWorker.postMessage({ type: 'SKIP_WAITING' });
-              // Reload após novo SW assumir controle
-              newWorker.addEventListener('statechange', (e) => {
-                if (e.target.state === 'activated') {
-                  window.location.reload();
-                }
+              document.getElementById('sw-reload').addEventListener('click', () => {
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                // reload após novo SW assumir controle
+                newWorker.addEventListener('statechange', (e) => {
+                  if (e.target.state === 'activated') {
+                    window.location.reload();
+                  }
+                });
               });
-            });
-          }
+            }
+          };
         };
-      };
-    })
-    .catch(error => {
-      console.log('⚠️ Erro ao registrar SW:', error);
-    });
-}
+      })
+      .catch(err => console.error('❌ Erro ao registrar SW:', err));
+  }
 });
 
 /* ===== expor uploadAssinatura para input onchange ===== */
@@ -809,5 +765,3 @@ window.addEventListener('appinstalled', () => {
 </script>
 </body>
 </html>
-
-
